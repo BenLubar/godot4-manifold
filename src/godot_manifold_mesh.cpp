@@ -438,11 +438,6 @@ Ref<ManifoldMesh> ManifoldMesh::from_mesh(const Ref<Mesh> &p_mesh) {
 
 	const int32_t num_surfaces = p_mesh->get_surface_count();
 
-	mesh->_surface_formats.resize(num_surfaces);
-	mesh->_surface_original_ids.resize(num_surfaces);
-	mesh->_surface_materials.resize(num_surfaces);
-	mesh->_surface_names.resize(num_surfaces);
-
 	uint32_t format_union = 0;
 	I total_vertices = 0, total_indices = 0;
 	for (int32_t surface = 0; surface < num_surfaces; surface++) {
@@ -516,14 +511,19 @@ Ref<ManifoldMesh> ManifoldMesh::from_mesh(const Ref<Mesh> &p_mesh) {
 	for (int32_t surface = 0; surface < num_surfaces; surface++) {
 		ERR_FAIL_COND_V(array_mesh.is_valid() && array_mesh->surface_get_primitive_type(surface) != PRIMITIVE_TRIANGLES, Ref<ManifoldMesh>());
 
-		const uint32_t format = array_mesh.is_valid() ? array_mesh->surface_get_format(surface) : get_surface_format_hack(p_mesh->surface_get_arrays(surface));
-		mesh->_surface_formats[surface] = format;
-
 		const Ref<Material> material = p_mesh->surface_get_material(surface);
 		const uint32_t original_id = get_material_original_id(material);
-		mesh->_surface_original_ids[surface] = original_id;
-		mesh->_surface_materials[surface] = material;
-		mesh->_surface_names[surface] = array_mesh.is_valid() ? array_mesh->surface_get_name(surface) : String();
+		const uint32_t format = array_mesh.is_valid() ? array_mesh->surface_get_format(surface) : get_surface_format_hack(p_mesh->surface_get_arrays(surface));
+
+		int64_t existing_surface = mesh->_surface_original_ids.find(original_id);
+		if (likely(existing_surface == -1)) {
+			mesh->_surface_formats.append(format);
+			mesh->_surface_original_ids.append(original_id);
+			mesh->_surface_materials.append(material);
+			mesh->_surface_names.append(array_mesh.is_valid() ? array_mesh->surface_get_name(surface) : String());
+		} else {
+			mesh->_surface_formats[existing_surface] |= format;
+		}
 
 		I vertex = base_vertex, index = base_index;
 
