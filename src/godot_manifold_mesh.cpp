@@ -470,6 +470,13 @@ Ref<ManifoldMesh> ManifoldMesh::from_mesh(const Ref<Mesh> &p_mesh) {
 		}
 	}
 
+	if (total_indices == 0) {
+		mesh->_inner->_meshgl_dirty = true;
+		mesh->_inner->_has_bad_original_ids = false;
+
+		return mesh;
+	}
+
 	// always include normals in what we give to manifold
 	// never include tangents - they are computed when we turn back into a mesh
 	mesh->_inner->_meshgl.numProp = 6;
