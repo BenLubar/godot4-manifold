@@ -57,7 +57,7 @@ static _FORCE_INLINE_ manifold::mat3x4 to_mat3x4(const godot::Transform3D &p_tra
 static _FORCE_INLINE_ godot::PackedVector2Array from_simple_polygon(const manifold::SimplePolygon &p_polygon) {
 	godot::PackedVector2Array polygon;
 	polygon.resize(p_polygon.size());
-	std::transform(p_polygon.crbegin(), p_polygon.crend(), polygon.begin(), &from_vec2);
+	std::transform(p_polygon.cbegin(), p_polygon.cend(), polygon.begin(), &from_vec2);
 	return polygon;
 }
 static _FORCE_INLINE_ godot::TypedArray<godot::PackedVector2Array> from_polygons(const manifold::Polygons &p_polygons) {
@@ -69,7 +69,7 @@ static _FORCE_INLINE_ godot::TypedArray<godot::PackedVector2Array> from_polygons
 static _FORCE_INLINE_ manifold::SimplePolygon to_simple_polygon(const godot::PackedVector2Array &p_polygon) {
 	manifold::SimplePolygon polygon;
 	polygon.resize(p_polygon.size());
-	std::transform(p_polygon.begin(), p_polygon.end(), polygon.rbegin(), &to_vec2);
+	std::transform(p_polygon.begin(), p_polygon.end(), polygon.begin(), &to_vec2);
 	return polygon;
 }
 static _FORCE_INLINE_ manifold::Polygons to_polygons(const godot::TypedArray<godot::PackedVector2Array> &p_polygons) {
