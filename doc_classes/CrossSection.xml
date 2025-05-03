@@ -155,6 +155,11 @@
 			<description>
 			</description>
 		</method>
+		<method name="to_triangles" qualifiers="const">
+			<return type="PackedVector2Array" />
+			<description>
+			</description>
+		</method>
 		<method name="transform" qualifiers="const">
 			<return type="CrossSection" />
 			<param index="0" name="transform" type="Transform2D" />

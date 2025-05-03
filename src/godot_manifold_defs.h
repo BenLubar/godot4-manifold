@@ -44,6 +44,7 @@ public:
 	static godot::Ref<CrossSection> from_rect(const godot::Rect2 &p_rect);
 	godot::TypedArray<godot::PackedVector2Array> to_polygons() const;
 	godot::TypedArray<godot::PackedVector2Array> to_convex_polygons() const;
+	godot::PackedVector2Array to_triangles() const;
 
 	godot::TypedArray<CrossSection> decompose() const;
 	static godot::Ref<CrossSection> compose(const godot::TypedArray<CrossSection> &p_cross_sections);

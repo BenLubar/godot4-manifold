@@ -33,6 +33,7 @@ void CrossSection::_bind_methods() {
 	ClassDB::bind_static_method(get_class_static(), D_METHOD("from_rect", "rect"), &CrossSection::from_rect);
 	ClassDB::bind_method(D_METHOD("to_polygons"), &CrossSection::to_polygons);
 	ClassDB::bind_method(D_METHOD("to_convex_polygons"), &CrossSection::to_convex_polygons);
+	ClassDB::bind_method(D_METHOD("to_triangles"), &CrossSection::to_triangles);
 
 	ClassDB::bind_method(D_METHOD("decompose"), &CrossSection::decompose);
 	ClassDB::bind_static_method(get_class_static(), D_METHOD("compose", "cross_sections"), &CrossSection::compose);
@@ -134,7 +135,7 @@ TypedArray<PackedVector2Array> CrossSection::to_convex_polygons() const {
 	}
 
 	TPPLPartition tpart;
-	if (tpart.ConvexPartition_HM(&in_poly, &out_poly) == 0) { // Failed.
+	if (tpart.ConvexPartition_HM(&in_poly, &out_poly) == 0) {
 		ERR_PRINT("Convex decomposing failed!");
 		return decomp;
 	}
@@ -152,6 +153,61 @@ TypedArray<PackedVector2Array> CrossSection::to_convex_polygons() const {
 
 		decomp[idx] = dp;
 
+		idx++;
+	}
+
+	return decomp;
+}
+
+PackedVector2Array CrossSection::to_triangles() const {
+	const TypedArray<PackedVector2Array> polygons_and_holes = to_polygons();
+
+	PackedVector2Array decomp;
+	TPPLPolyList in_poly, out_poly;
+
+	for (int64_t i = 0; i < polygons_and_holes.size(); i++) {
+		const PackedVector2Array polygon_or_hole = polygons_and_holes[i];
+
+		TPPLPoly inp;
+		inp.Init(polygon_or_hole.size());
+		for (int64_t j = 0; j < polygon_or_hole.size(); j++) {
+			inp[j].x = polygon_or_hole[j].x;
+			inp[j].y = polygon_or_hole[j].y;
+		}
+
+		if (Geometry2D::get_singleton()->is_polygon_clockwise(polygon_or_hole)) {
+			inp.SetOrientation(TPPL_ORIENTATION_CW);
+			inp.SetHole(true);
+		} else {
+			inp.SetOrientation(TPPL_ORIENTATION_CCW);
+		}
+
+		DEV_ASSERT(inp.Valid());
+
+		in_poly.push_back(inp);
+	}
+
+	TPPLPartition tpart;
+	if (tpart.Triangulate_EC(&in_poly, &out_poly) == 0) {
+		ERR_PRINT("Triangulation failed!");
+		return decomp;
+	}
+
+	decomp.resize(out_poly.size() * 3);
+	int idx = 0;
+	for (const TPPLPoly &tp : out_poly) {
+		DEV_ASSERT(tp.GetNumPoints() == 3);
+
+		decomp[idx].x = static_cast<real_t>(tp.GetPoint(0).x);
+		decomp[idx].y = static_cast<real_t>(tp.GetPoint(0).y);
+		idx++;
+
+		decomp[idx].x = static_cast<real_t>(tp.GetPoint(1).x);
+		decomp[idx].y = static_cast<real_t>(tp.GetPoint(1).y);
+		idx++;
+
+		decomp[idx].x = static_cast<real_t>(tp.GetPoint(2).x);
+		decomp[idx].y = static_cast<real_t>(tp.GetPoint(2).y);
 		idx++;
 	}
 
