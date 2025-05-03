@@ -1,0 +1,29 @@
+[gd_scene load_steps=4 format=4 uid="uid://ggx01og7jttd"]
+
+[ext_resource type="Script" uid="uid://c6i2pwc61qxib" path="res://rotation_test.gd" id="1_thr6f"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_mou6f"]
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_thr6f"]
+_surfaces = [{
+"aabb": AABB(-0.5, -0.707107, -0.707107, 1, 1.41421, 1.41421),
+"format": 34359738375,
+"name": "cube",
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 36,
+"vertex_data": PackedByteArray("AAAAv/MENb8AAAAAAAAAPwAAAADzBDW/AAAAvwAAAADzBDW/AAAAv/MENT8AAAAAAAAAvwAAAADzBDW/AAAAPwAAAADzBDW/AAAAv/MENb8AAAAAAAAAvwAAAADzBDW/AAAAvwAAAADzBDU/AAAAvwAAAADzBDU/AAAAP/MENb8AAAAAAAAAv/MENb8AAAAAAAAAvwAAAADzBDU/AAAAvwAAAADzBDW/AAAAv/MENT8AAAAAAAAAvwAAAADzBDU/AAAAv/MENT8AAAAAAAAAPwAAAADzBDU/AAAAP/MENb8AAAAAAAAAP/MENT8AAAAAAAAAPwAAAADzBDW/AAAAP/MENb8AAAAAAAAAPwAAAADzBDW/AAAAv/MENb8AAAAAAAAAP/MENT8AAAAAAAAAv/MENT8AAAAAAAAAPwAAAADzBDW/AAAAPwAAAADzBDU/AAAAv/MENT8AAAAAAAAAP/MENT8AAAAAAAAAPwAAAADzBDU/AAAAP/MENb8AAAAAAAAAvwAAAADzBDU/AAAAPwAAAADzBDU/AAAAP/MENT8AAAAAAAAAP/MENb8AAAAA/78AAFRVqar/vwAAVFWpqv+/AABUVamq/7///6oqVJX/v///qipUlf+///+qKlSVAAD/f/9//78AAP9//3//vwAA/3//f/+//3//P6oqVJX/f/8/qipUlf9//z+qKlSVAAD/f/9//78AAP9//3//vwAA/3//f/+//3//v1RVqar/f/+/VFWpqv9//79UVamq////f/9//7////9//3//v////3//f/+//78AAFRVqar/vwAAVFWpqv+/AABUVamq/7///6oqVJX/v///qipUlf+///+qKlSV/3//v1RVqar/f/+/VFWpqv9//79UVamq/3//P6oqVJX/f/8/qipUlf9//z+qKlSV////f/9//7////9//3//v////3//f/+/")
+}]
+blend_shape_mode = 0
+
+[node name="RotationTest" type="Node3D"]
+script = ExtResource("1_thr6f")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, -0.707107, 0, 0.707107, 0.707107, 1, 0, 0)
+mesh = SubResource("BoxMesh_mou6f")
+
+[node name="Box" type="MeshInstance3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, 0)
+mesh = SubResource("ArrayMesh_thr6f")

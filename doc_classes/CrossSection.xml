@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="CrossSection" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="batch_difference" qualifiers="static">
+			<return type="CrossSection" />
+			<param index="0" name="cross_sections" type="CrossSection[]" />
+			<description>
+			</description>
+		</method>
+		<method name="batch_intersection" qualifiers="static">
+			<return type="CrossSection" />
+			<param index="0" name="cross_sections" type="CrossSection[]" />
+			<description>
+			</description>
+		</method>
+		<method name="batch_union" qualifiers="static">
+			<return type="CrossSection" />
+			<param index="0" name="cross_sections" type="CrossSection[]" />
+			<description>
+			</description>
+		</method>
+		<method name="circle" qualifiers="static">
+			<return type="CrossSection" />
+			<param index="0" name="radius" type="float" />
+			<param index="1" name="circular_segments" type="int" default="0" />
+			<description>
+			</description>
+		</method>
+		<method name="compose" qualifiers="static">
+			<return type="CrossSection" />
+			<param index="0" name="cross_sections" type="CrossSection[]" />
+			<description>
+			</description>
+		</method>
+		<method name="decompose" qualifiers="const">
+			<return type="CrossSection[]" />
+			<description>
+			</description>
+		</method>
+		<method name="difference" qualifiers="const">
+			<return type="CrossSection" />
+			<param index="0" name="with" type="CrossSection" />
+			<description>
+			</description>
+		</method>
+		<method name="from_polygons" qualifiers="static">
+			<return type="CrossSection" />
+			<param index="0" name="polygons" type="PackedVector2Array[]" />
+			<param index="1" name="fill_rule" type="int" enum="CrossSection.FillRule" default="2" />
+			<description>
+			</description>
+		</method>
+		<method name="from_rect" qualifiers="static">
+			<return type="CrossSection" />
+			<param index="0" name="rect" type="Rect2" />
+			<description>
+			</description>
+		</method>
+		<method name="from_simple_polygon" qualifiers="static">
+			<return type="CrossSection" />
+			<param index="0" name="simple_polygon" type="PackedVector2Array" />
+			<param index="1" name="fill_rule" type="int" enum="CrossSection.FillRule" default="2" />
+			<description>
+			</description>
+		</method>
+		<method name="get_area" qualifiers="const">
+			<return type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="get_bounds" qualifiers="const">
+			<return type="Rect2" />
+			<description>
+			</description>
+		</method>
+		<method name="get_contour_count" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_vertex_count" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="hull" qualifiers="const">
+			<return type="CrossSection" />
+			<description>
+			</description>
+		</method>
+		<method name="intersection" qualifiers="const">
+			<return type="CrossSection" />
+			<param index="0" name="with" type="CrossSection" />
+			<description>
+			</description>
+		</method>
+		<method name="is_empty" qualifiers="const">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="mirror" qualifiers="const">
+			<return type="CrossSection" />
+			<param index="0" name="axis" type="Vector2" />
+			<description>
+			</description>
+		</method>
+		<method name="offset" qualifiers="const">
+			<return type="CrossSection" />
+			<param index="0" name="delta" type="float" />
+			<param index="1" name="join_type" type="int" enum="CrossSection.JoinType" />
+			<param index="2" name="miter_limit" type="float" default="2.0" />
+			<param index="3" name="circular_segments" type="int" default="0" />
+			<description>
+			</description>
+		</method>
+		<method name="rotate" qualifiers="const">
+			<return type="CrossSection" />
+			<param index="0" name="degrees" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="scale" qualifiers="const">
+			<return type="CrossSection" />
+			<param index="0" name="scale" type="Vector2" />
+			<description>
+			</description>
+		</method>
+		<method name="simplify" qualifiers="const">
+			<return type="CrossSection" />
+			<param index="0" name="epsilon" type="float" default="1e-06" />
+			<description>
+			</description>
+		</method>
+		<method name="square" qualifiers="static">
+			<return type="CrossSection" />
+			<param index="0" name="dimensions" type="Vector2" />
+			<param index="1" name="center" type="bool" default="false" />
+			<description>
+			</description>
+		</method>
+		<method name="to_convex_polygons" qualifiers="const">
+			<return type="PackedVector2Array[]" />
+			<description>
+			</description>
+		</method>
+		<method name="to_polygons" qualifiers="const">
+			<return type="PackedVector2Array[]" />
+			<description>
+			</description>
+		</method>
+		<method name="transform" qualifiers="const">
+			<return type="CrossSection" />
+			<param index="0" name="transform" type="Transform2D" />
+			<description>
+			</description>
+		</method>
+		<method name="translate" qualifiers="const">
+			<return type="CrossSection" />
+			<param index="0" name="offset" type="Vector2" />
+			<description>
+			</description>
+		</method>
+		<method name="union" qualifiers="const">
+			<return type="CrossSection" />
+			<param index="0" name="with" type="CrossSection" />
+			<description>
+			</description>
+		</method>
+		<method name="warp" qualifiers="const">
+			<return type="CrossSection" />
+			<param index="0" name="warp_vertex" type="Callable" />
+			<description>
+			</description>
+		</method>
+		<method name="warp_batch" qualifiers="const">
+			<return type="CrossSection" />
+			<param index="0" name="warp_vertices" type="Callable" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<constants>
+		<constant name="EVEN_ODD" value="0" enum="FillRule">
+		</constant>
+		<constant name="NON_ZERO" value="1" enum="FillRule">
+		</constant>
+		<constant name="POSITIVE" value="2" enum="FillRule">
+		</constant>
+		<constant name="NEGATIVE" value="3" enum="FillRule">
+		</constant>
+		<constant name="SQUARE" value="0" enum="JoinType">
+		</constant>
+		<constant name="ROUND" value="1" enum="JoinType">
+		</constant>
+		<constant name="MITER" value="2" enum="JoinType">
+		</constant>
+	</constants>
+</class>

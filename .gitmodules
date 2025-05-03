@@ -1,0 +1,15 @@
+[submodule "godot-cpp"]
+	path = godot-cpp
+	url = https://github.com/godotengine/godot-cpp.git
+[submodule "manifold"]
+	path = manifold
+	url = https://github.com/elalish/manifold.git
+	ignore = untracked
+[submodule "clipper2"]
+	path = clipper2
+	url = https://github.com/AngusJohnson/Clipper2.git
+	ignore = untracked
+[submodule "polypartition"]
+	path = polypartition
+	url = https://github.com/ivanfratric/polypartition.git
+	ignore = untracked

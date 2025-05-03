@@ -1,0 +1,381 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ManifoldMesh" inherits="Mesh" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="batch_difference" qualifiers="static">
+			<return type="ManifoldMesh" />
+			<param index="0" name="manifolds" type="ManifoldMesh[]" />
+			<description>
+			</description>
+		</method>
+		<method name="batch_intersection" qualifiers="static">
+			<return type="ManifoldMesh" />
+			<param index="0" name="manifolds" type="ManifoldMesh[]" />
+			<description>
+			</description>
+		</method>
+		<method name="batch_union" qualifiers="static">
+			<return type="ManifoldMesh" />
+			<param index="0" name="manifolds" type="ManifoldMesh[]" />
+			<description>
+			</description>
+		</method>
+		<method name="compose" qualifiers="static">
+			<return type="ManifoldMesh" />
+			<param index="0" name="manifolds" type="ManifoldMesh[]" />
+			<description>
+			</description>
+		</method>
+		<method name="cube" qualifiers="static">
+			<return type="ManifoldMesh" />
+			<param index="0" name="size" type="Vector3" default="Vector3(1, 1, 1)" />
+			<param index="1" name="center" type="bool" default="false" />
+			<param index="2" name="material" type="Material" default="null" />
+			<description>
+			</description>
+		</method>
+		<method name="cylinder" qualifiers="static">
+			<return type="ManifoldMesh" />
+			<param index="0" name="height" type="float" />
+			<param index="1" name="radius_low" type="float" />
+			<param index="2" name="radius_high" type="float" default="-1.0" />
+			<param index="3" name="circular_segments" type="int" default="0" />
+			<param index="4" name="center" type="bool" default="false" />
+			<param index="5" name="material" type="Material" default="null" />
+			<description>
+			</description>
+		</method>
+		<method name="decompose" qualifiers="const">
+			<return type="ManifoldMesh[]" />
+			<description>
+			</description>
+		</method>
+		<method name="difference" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="with" type="ManifoldMesh" />
+			<description>
+			</description>
+		</method>
+		<method name="extrude" qualifiers="static">
+			<return type="ManifoldMesh" />
+			<param index="0" name="cross_section" type="PackedVector2Array[]" />
+			<param index="1" name="height" type="float" />
+			<param index="2" name="divisions" type="int" default="0" />
+			<param index="3" name="twist_degrees" type="float" default="0.0" />
+			<param index="4" name="scale_top" type="Vector2" default="Vector2(1, 1)" />
+			<param index="5" name="material" type="Material" default="null" />
+			<description>
+			</description>
+		</method>
+		<method name="from_mesh" qualifiers="static">
+			<return type="ManifoldMesh" />
+			<param index="0" name="mesh" type="Mesh" />
+			<description>
+			</description>
+		</method>
+		<method name="get_aabb" qualifiers="const">
+			<return type="AABB" />
+			<description>
+			</description>
+		</method>
+		<method name="get_edge_count" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_genus" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_min_gap" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="other" type="ManifoldMesh" />
+			<param index="1" name="search_length" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="get_property_vertex_count" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_surface_area" qualifiers="const">
+			<return type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="get_triangle_count" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_vertex_count" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_volume" qualifiers="const">
+			<return type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="hull" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<description>
+			</description>
+		</method>
+		<method name="intersection" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="with" type="ManifoldMesh" />
+			<description>
+			</description>
+		</method>
+		<method name="is_empty" qualifiers="const">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="is_valid" qualifiers="const">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="level_set" qualifiers="static">
+			<return type="ManifoldMesh" />
+			<param index="0" name="sdf" type="Callable" />
+			<param index="1" name="bounds" type="AABB" />
+			<param index="2" name="edge_length" type="float" />
+			<param index="3" name="level" type="float" default="0.0" />
+			<param index="4" name="tolerance" type="float" default="-1.0" />
+			<param index="5" name="material" type="Material" default="null" />
+			<description>
+			</description>
+		</method>
+		<method name="mirror" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="normal" type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="modify_color" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="modify" type="Callable" />
+			<description>
+			</description>
+		</method>
+		<method name="modify_custom0" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="modify" type="Callable" />
+			<description>
+			</description>
+		</method>
+		<method name="modify_custom1" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="modify" type="Callable" />
+			<description>
+			</description>
+		</method>
+		<method name="modify_custom2" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="modify" type="Callable" />
+			<description>
+			</description>
+		</method>
+		<method name="modify_custom3" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="modify" type="Callable" />
+			<description>
+			</description>
+		</method>
+		<method name="modify_normal" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="modify" type="Callable" />
+			<param index="1" name="normalize" type="bool" default="true" />
+			<description>
+			</description>
+		</method>
+		<method name="modify_tex_uv" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="modify" type="Callable" />
+			<description>
+			</description>
+		</method>
+		<method name="modify_tex_uv2" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="modify" type="Callable" />
+			<description>
+			</description>
+		</method>
+		<method name="project" qualifiers="const">
+			<return type="PackedVector2Array[]" />
+			<description>
+			</description>
+		</method>
+		<method name="refine" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="subdivisions" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="refine_to_length" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="length" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="refine_to_tolerance" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="tolerance" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="remove_unused_materials">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="revolve" qualifiers="static">
+			<return type="ManifoldMesh" />
+			<param index="0" name="cross_section" type="PackedVector2Array[]" />
+			<param index="1" name="circular_segments" type="int" default="0" />
+			<param index="2" name="revolve_degrees" type="float" default="360.0" />
+			<param index="3" name="material" type="Material" default="null" />
+			<description>
+			</description>
+		</method>
+		<method name="rotate" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="rotation_degrees" type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="scale" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="scale" type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="simplify" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="tolerance" type="float" default="0.0" />
+			<description>
+			</description>
+		</method>
+		<method name="slice" qualifiers="const">
+			<return type="PackedVector2Array[]" />
+			<param index="0" name="height" type="float" default="0.0" />
+			<description>
+			</description>
+		</method>
+		<method name="sphere" qualifiers="static">
+			<return type="ManifoldMesh" />
+			<param index="0" name="radius" type="float" />
+			<param index="1" name="circular_segments" type="int" default="0" />
+			<param index="2" name="material" type="Material" default="null" />
+			<description>
+			</description>
+		</method>
+		<method name="split" qualifiers="const">
+			<return type="ManifoldMesh[]" />
+			<param index="0" name="manifold" type="ManifoldMesh" />
+			<description>
+			</description>
+		</method>
+		<method name="split_by_plane" qualifiers="const">
+			<return type="ManifoldMesh[]" />
+			<param index="0" name="plane" type="Plane" />
+			<param index="1" name="material" type="Material" default="null" />
+			<description>
+			</description>
+		</method>
+		<method name="tetrahedron" qualifiers="static">
+			<return type="ManifoldMesh" />
+			<param index="0" name="material" type="Material" default="null" />
+			<description>
+			</description>
+		</method>
+		<method name="to_mesh" qualifiers="const">
+			<return type="ArrayMesh" />
+			<param index="0" name="generate_lods" type="bool" default="true" />
+			<param index="1" name="create_shadow_mesh" type="bool" default="true" />
+			<param index="2" name="skip_material" type="Material[]" default="[]" />
+			<description>
+			</description>
+		</method>
+		<method name="transform" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="transform" type="Transform3D" />
+			<description>
+			</description>
+		</method>
+		<method name="translate" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="offset" type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="trim_by_plane" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="plane" type="Plane" />
+			<param index="1" name="material" type="Material" default="null" />
+			<description>
+			</description>
+		</method>
+		<method name="union" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="with" type="ManifoldMesh" />
+			<description>
+			</description>
+		</method>
+		<method name="warp" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="warp_vertex" type="Callable" />
+			<description>
+			</description>
+		</method>
+		<method name="warp_batch" qualifiers="const">
+			<return type="ManifoldMesh" />
+			<param index="0" name="warp_vertices" type="Callable" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="face_id" type="PackedInt32Array" setter="set_face_id" getter="get_face_id" default="PackedInt32Array()">
+		</member>
+		<member name="halfedge_tangent" type="PackedFloat32Array" setter="set_halfedge_tangent" getter="get_halfedge_tangent" default="PackedFloat32Array()">
+		</member>
+		<member name="merge_from_vert" type="PackedInt32Array" setter="set_merge_from_vert" getter="get_merge_from_vert" default="PackedInt32Array()">
+		</member>
+		<member name="merge_to_vert" type="PackedInt32Array" setter="set_merge_to_vert" getter="get_merge_to_vert" default="PackedInt32Array()">
+		</member>
+		<member name="num_prop" type="int" setter="set_num_prop" getter="get_num_prop" default="3">
+		</member>
+		<member name="run_index" type="PackedInt32Array" setter="set_run_index" getter="get_run_index" default="PackedInt32Array()">
+		</member>
+		<member name="run_original_id" type="PackedInt32Array" setter="set_run_original_id" getter="get_run_original_id" default="PackedInt32Array()">
+		</member>
+		<member name="run_transform" type="PackedFloat32Array" setter="set_run_transform" getter="get_run_transform" default="PackedFloat32Array()">
+		</member>
+		<member name="surface_formats" type="PackedInt32Array" setter="set_surface_formats" getter="get_surface_formats" default="PackedInt32Array()">
+		</member>
+		<member name="surface_materials" type="Material[]" setter="set_surface_materials" getter="get_surface_materials" default="[]">
+		</member>
+		<member name="surface_names" type="PackedStringArray" setter="set_surface_names" getter="get_surface_names" default="PackedStringArray()">
+		</member>
+		<member name="surface_original_ids" type="PackedInt32Array" setter="set_surface_original_ids" getter="get_surface_original_ids" default="PackedInt32Array()">
+		</member>
+		<member name="tolerance" type="float" setter="set_tolerance" getter="get_tolerance" default="0.0">
+		</member>
+		<member name="tri_verts" type="PackedInt32Array" setter="set_tri_verts" getter="get_tri_verts" default="PackedInt32Array()">
+		</member>
+		<member name="vert_properties" type="PackedFloat32Array" setter="set_vert_properties" getter="get_vert_properties" default="PackedFloat32Array()">
+		</member>
+	</members>
+</class>
