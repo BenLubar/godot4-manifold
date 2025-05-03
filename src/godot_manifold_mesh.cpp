@@ -603,7 +603,9 @@ Ref<ManifoldMesh> ManifoldMesh::from_mesh(const Ref<Mesh> &p_mesh) {
 }
 
 Ref<ArrayMesh> ManifoldMesh::to_mesh(bool p_generate_lods, bool p_create_shadow_mesh, const TypedArray<Material> &p_skip_material) const {
-	ERR_FAIL_COND_V(is_empty(), Ref<ArrayMesh>());
+	if (unlikely(is_empty())) {
+		return memnew(ArrayMesh);
+	}
 
 	_commit_to_arrays();
 
