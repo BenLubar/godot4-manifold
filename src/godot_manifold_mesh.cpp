@@ -7,6 +7,7 @@
 
 #include <godot_cpp/classes/array_mesh.hpp>
 #include <godot_cpp/classes/importer_mesh.hpp>
+#include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/surface_tool.hpp>
 
 #include <manifold/manifold.h>
@@ -154,8 +155,10 @@ struct ManifoldMesh::Inner {
 	bool _manifold_dirty = false;
 	bool _meshgl_dirty = false;
 	bool _has_bad_original_ids = true;
+	bool _rid_dirty = true;
 
 	Vector<Array> _arrays;
+	RID _rid;
 };
 
 ManifoldMesh::ManifoldMesh() {
@@ -163,6 +166,13 @@ ManifoldMesh::ManifoldMesh() {
 }
 
 ManifoldMesh::~ManifoldMesh() {
+	if (unlikely(_inner->_rid.is_valid())) {
+		RenderingServer *rs = RenderingServer::get_singleton();
+		if (likely(rs)) {
+			rs->free_rid(_inner->_rid);
+		}
+	}
+
 	memdelete(_inner);
 	_inner = nullptr;
 }
@@ -245,6 +255,7 @@ void ManifoldMesh::remove_unused_materials() {
 	}
 
 	if (any_removed) {
+		_inner->_arrays.clear();
 		emit_changed();
 	}
 }
@@ -253,6 +264,7 @@ void ManifoldMesh::remove_unused_materials() {
 	_ensure_meshgl(); \
 	m_prop = m_param; \
 	_inner->_manifold_dirty = true; \
+	_inner->_arrays.clear(); \
 	emit_changed()
 #define SET_ARRAY(m_prop, m_param) \
 	_ensure_meshgl(); \
@@ -260,6 +272,7 @@ void ManifoldMesh::remove_unused_materials() {
 	static_assert(sizeof(m_param[0]) == sizeof(m_prop[0])); \
 	std::copy(m_param.ptr(), m_param.ptr() + m_param.size(), m_prop.begin()); \
 	_inner->_manifold_dirty = true; \
+	_inner->_arrays.clear(); \
 	emit_changed()
 
 #define GET_VALUE(m_prop) \
@@ -418,6 +431,34 @@ void ManifoldMesh::_set_blend_shape_name(int32_t p_index, const StringName &p_na
 AABB ManifoldMesh::_get_aabb() const {
 	_ensure_manifold();
 	return from_box(_inner->_manifold.BoundingBox());
+}
+RID ManifoldMesh::_get_rid() const {
+	_commit_to_arrays();
+
+	if (unlikely(_inner->_rid_dirty)) {
+		RenderingServer *rs = RenderingServer::get_singleton();
+		ERR_FAIL_NULL_V(rs, RID());
+
+		if (unlikely(!_inner->_rid.is_valid())) {
+			_inner->_rid = rs->mesh_create();
+
+			// automatically update mesh if edited directly (manifold edits create new objects)
+			const_cast<ManifoldMesh *>(this)->connect("changed", callable_mp(this, &ManifoldMesh::_get_rid), CONNECT_DEFERRED);
+		}
+
+		rs->mesh_clear(_inner->_rid);
+		for (int32_t i = 0; i < _get_surface_count(); i++) {
+			rs->mesh_add_surface_from_arrays(_inner->_rid, RenderingServer::PRIMITIVE_TRIANGLES, _surface_get_arrays(i), {}, {}, _surface_get_format(i));
+			const Ref<Material> surface_material = _surface_get_material(i);
+			if (surface_material.is_valid()) {
+				rs->mesh_surface_set_material(_inner->_rid, i, surface_material->get_rid());
+			}
+		}
+
+		_inner->_rid_dirty = false;
+	}
+
+	return _inner->_rid;
 }
 
 static BitField<Mesh::ArrayFormat> get_surface_format_hack(const Array &p_arrays) {
@@ -1017,6 +1058,7 @@ void ManifoldMesh::_ensure_meshgl() const {
 		_inner->_meshgl = _inner->_manifold.GetMeshGL(0);
 #endif
 		_inner->_arrays.clear();
+		_inner->_rid_dirty = true;
 		_inner->_meshgl_dirty = false;
 	}
 }

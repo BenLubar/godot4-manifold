@@ -173,6 +173,7 @@ public:
 	godot::StringName _get_blend_shape_name(int32_t p_index) const override;
 	void _set_blend_shape_name(int32_t p_index, const godot::StringName &p_name) override;
 	godot::AABB _get_aabb() const override;
+	godot::RID _get_rid() const override;
 
 	static godot::Ref<ManifoldMesh> from_mesh(const godot::Ref<godot::Mesh> &p_mesh);
 	godot::Ref<godot::ArrayMesh> to_mesh(bool p_generate_lods = true, bool p_create_shadow_mesh = true, const godot::TypedArray<godot::Material> &p_skip_material = {}) const;
