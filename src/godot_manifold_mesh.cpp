@@ -463,10 +463,13 @@ RID ManifoldMesh::_get_rid() const {
 
 static BitField<Mesh::ArrayFormat> get_surface_format_hack(const Array &p_arrays) {
 	// Godot's Mesh::surface_get_format method isn't exposed to scripting, so:
-	Ref<ArrayMesh> mesh;
-	mesh.instantiate();
-	mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, p_arrays);
-	return mesh->surface_get_format(0);
+	BitField<Mesh::ArrayFormat> format = 0;
+	for (int64_t i = 0; i < Mesh::ARRAY_MAX; i++) {
+		if (p_arrays[i] != Variant()) {
+			format.set_flag(Mesh::ArrayFormat(1 << i));
+		}
+	}
+	return format;
 }
 Ref<ManifoldMesh> ManifoldMesh::from_mesh(const Ref<Mesh> &p_mesh) {
 	ERR_FAIL_COND_V(p_mesh.is_null(), Ref<ManifoldMesh>());
