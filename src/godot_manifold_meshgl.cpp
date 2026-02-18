@@ -57,6 +57,7 @@ void ManifoldMesh32::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("merge"), &ManifoldMesh32::merge);
 	ClassDB::bind_method(D_METHOD("to_manifold"), &ManifoldMesh32::to_manifold);
+	ClassDB::bind_method(D_METHOD("to_manifold_with_original_id", "original_id"), &ManifoldMesh32::to_manifold_with_original_id);
 }
 void ManifoldMesh64::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("num_vert"), &ManifoldMesh64::num_vert);
@@ -108,6 +109,7 @@ void ManifoldMesh64::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("merge"), &ManifoldMesh64::merge);
 	ClassDB::bind_method(D_METHOD("to_manifold"), &ManifoldMesh64::to_manifold);
+	ClassDB::bind_method(D_METHOD("to_manifold_with_original_id", "original_id"), &ManifoldMesh64::to_manifold_with_original_id);
 }
 
 struct ManifoldMesh32::Inner {
@@ -232,6 +234,20 @@ bool ManifoldMesh64::merge() {
 Ref<Manifold> ManifoldMesh32::to_manifold() const {
 	return memnew(Manifold(manifold::Manifold(_inner->_meshgl)));
 }
+Ref<Manifold> ManifoldMesh32::to_manifold_with_original_id(uint32_t p_original_id) const {
+	manifold::MeshGL mesh = _inner->_meshgl;
+	mesh.runIndex = {0};
+	mesh.runOriginalID = {p_original_id};
+	mesh.runTransform = {};
+	return memnew(Manifold(manifold::Manifold(mesh)));
+}
 Ref<Manifold> ManifoldMesh64::to_manifold() const {
 	return memnew(Manifold(manifold::Manifold(_inner->_meshgl)));
+}
+Ref<Manifold> ManifoldMesh64::to_manifold_with_original_id(uint32_t p_original_id) const {
+	manifold::MeshGL64 mesh = _inner->_meshgl;
+	mesh.runIndex = {0};
+	mesh.runOriginalID = {p_original_id};
+	mesh.runTransform = {};
+	return memnew(Manifold(manifold::Manifold(mesh)));
 }

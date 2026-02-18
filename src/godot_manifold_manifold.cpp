@@ -323,7 +323,7 @@ Ref<Manifold> Manifold::calculate_curvature(int p_gaussian_idx, int p_mean_idx) 
 	return memnew(Manifold(_inner->_manifold.CalculateCurvature(p_gaussian_idx, p_mean_idx)));
 }
 Ref<Manifold> Manifold::calculate_normals(int p_normal_idx, double p_min_sharp_angle) const {
-	return memnew(Manifold(_inner->_manifold.CalculateCurvature(p_normal_idx, p_min_sharp_angle)));
+	return memnew(Manifold(_inner->_manifold.CalculateNormals(p_normal_idx, p_min_sharp_angle)));
 }
 
 Ref<Manifold> Manifold::refine(int p_splits) const {

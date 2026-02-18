@@ -126,6 +126,7 @@ public:
 
 	bool merge();
 	godot::Ref<Manifold> to_manifold() const;
+	godot::Ref<Manifold> to_manifold_with_original_id(uint32_t p_original_id) const;
 
 private:
 	struct Inner;
@@ -170,6 +171,7 @@ public:
 
 	bool merge();
 	godot::Ref<Manifold> to_manifold() const;
+	godot::Ref<Manifold> to_manifold_with_original_id(uint32_t p_original_id) const;
 
 private:
 	struct Inner;
