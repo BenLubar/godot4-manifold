@@ -13,6 +13,9 @@ void initialize_manifold_module(ModuleInitializationLevel p_level) {
 	}
 
 	GDREGISTER_CLASS(CrossSection);
+	GDREGISTER_CLASS(ManifoldMesh32);
+	GDREGISTER_CLASS(ManifoldMesh64);
+	GDREGISTER_CLASS(Manifold);
 	GDREGISTER_CLASS(ManifoldMesh);
 }
 

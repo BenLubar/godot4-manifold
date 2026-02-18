@@ -39,7 +39,9 @@ sources = [
 
 	"src/godot_manifold_register_types.cpp",
 	"src/godot_manifold_cross_section.cpp",
+	"src/godot_manifold_manifold.cpp",
 	"src/godot_manifold_mesh.cpp",
+	"src/godot_manifold_meshgl.cpp",
 ]
 
 manifold_objects = [env_manifold.SharedObject(file) for file in sources]

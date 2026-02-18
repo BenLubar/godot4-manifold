@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ManifoldMesh64" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="merge">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="num_tri" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="num_vert" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="to_manifold" qualifiers="const">
+			<return type="Manifold" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="face_id" type="PackedInt64Array" setter="set_face_id" getter="get_face_id" default="PackedInt64Array()">
+		</member>
+		<member name="halfedge_tangent" type="PackedFloat64Array" setter="set_halfedge_tangent" getter="get_halfedge_tangent" default="PackedFloat64Array()">
+		</member>
+		<member name="merge_from_vert" type="PackedInt64Array" setter="set_merge_from_vert" getter="get_merge_from_vert" default="PackedInt64Array()">
+		</member>
+		<member name="merge_to_vert" type="PackedInt64Array" setter="set_merge_to_vert" getter="get_merge_to_vert" default="PackedInt64Array()">
+		</member>
+		<member name="num_prop" type="int" setter="set_num_prop" getter="get_num_prop" default="3">
+		</member>
+		<member name="run_index" type="PackedInt64Array" setter="set_run_index" getter="get_run_index" default="PackedInt64Array()">
+		</member>
+		<member name="run_original_id" type="PackedInt32Array" setter="set_run_original_id" getter="get_run_original_id" default="PackedInt32Array()">
+		</member>
+		<member name="run_transform" type="PackedFloat64Array" setter="set_run_transform" getter="get_run_transform" default="PackedFloat64Array()">
+		</member>
+		<member name="tolerance" type="float" setter="set_tolerance" getter="get_tolerance" default="0.0">
+		</member>
+		<member name="tri_verts" type="PackedInt64Array" setter="set_tri_verts" getter="get_tri_verts" default="PackedInt64Array()">
+		</member>
+		<member name="vert_properties" type="PackedFloat64Array" setter="set_vert_properties" getter="get_vert_properties" default="PackedFloat64Array()">
+		</member>
+	</members>
+</class>

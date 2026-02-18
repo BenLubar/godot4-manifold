@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="Manifold" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="as_original" qualifiers="const">
+			<return type="Manifold" />
+			<description>
+			</description>
+		</method>
+		<method name="bounding_box" qualifiers="const">
+			<return type="AABB" />
+			<description>
+			</description>
+		</method>
+		<method name="calculate_curvature" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="gaussian_idx" type="int" />
+			<param index="1" name="mean_idx" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="calculate_normals" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="normal_idx" type="int" />
+			<param index="1" name="min_sharp_angle" type="float" default="60" />
+			<description>
+			</description>
+		</method>
+		<method name="compose" qualifiers="static">
+			<return type="Manifold" />
+			<param index="0" name="manifolds" type="Manifold[]" />
+			<description>
+			</description>
+		</method>
+		<method name="cube" qualifiers="static">
+			<return type="Manifold" />
+			<param index="0" name="size" type="Vector3" default="Vector3(1, 1, 1)" />
+			<param index="1" name="center" type="bool" default="false" />
+			<description>
+			</description>
+		</method>
+		<method name="cylinder" qualifiers="static">
+			<return type="Manifold" />
+			<param index="0" name="height" type="float" />
+			<param index="1" name="radius_low" type="float" />
+			<param index="2" name="radius_high" type="float" default="-1.0" />
+			<param index="3" name="circular_segments" type="int" default="0" />
+			<param index="4" name="center" type="bool" default="false" />
+			<description>
+			</description>
+		</method>
+		<method name="decompose" qualifiers="const">
+			<return type="Manifold[]" />
+			<description>
+			</description>
+		</method>
+		<method name="difference_batch" qualifiers="static">
+			<return type="Manifold" />
+			<param index="0" name="manifolds" type="Manifold[]" />
+			<description>
+			</description>
+		</method>
+		<method name="difference_with" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="second" type="Manifold" />
+			<description>
+			</description>
+		</method>
+		<method name="extrude" qualifiers="static">
+			<return type="Manifold" />
+			<param index="0" name="cross_section" type="PackedVector2Array[]" />
+			<param index="1" name="height" type="float" />
+			<param index="2" name="num_divisions" type="int" default="0" />
+			<param index="3" name="twist_degrees" type="float" default="0.0" />
+			<param index="4" name="scale_top" type="Vector2" default="Vector2(1, 1)" />
+			<description>
+			</description>
+		</method>
+		<method name="genus" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_tolerance" qualifiers="const">
+			<return type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="hull" qualifiers="const">
+			<return type="Manifold" />
+			<description>
+			</description>
+		</method>
+		<method name="hull_batch" qualifiers="static">
+			<return type="Manifold" />
+			<param index="0" name="manifolds" type="Manifold[]" />
+			<description>
+			</description>
+		</method>
+		<method name="hull_points" qualifiers="static">
+			<return type="Manifold" />
+			<param index="0" name="points" type="PackedVector3Array" />
+			<description>
+			</description>
+		</method>
+		<method name="intersection_batch" qualifiers="static">
+			<return type="Manifold" />
+			<param index="0" name="manifolds" type="Manifold[]" />
+			<description>
+			</description>
+		</method>
+		<method name="intersection_with" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="second" type="Manifold" />
+			<description>
+			</description>
+		</method>
+		<method name="is_empty" qualifiers="const">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="level_set" qualifiers="static">
+			<return type="Manifold" />
+			<param index="0" name="sdf" type="Callable" />
+			<param index="1" name="bounds" type="AABB" />
+			<param index="2" name="edge_length" type="float" />
+			<param index="3" name="level" type="float" default="0" />
+			<param index="4" name="tolerance" type="float" default="-1" />
+			<description>
+			</description>
+		</method>
+		<method name="min_gap" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="other" type="Manifold" />
+			<param index="1" name="search_length" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="mirror" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="axis" type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="num_edge" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="num_prop" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="num_prop_vert" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="num_tri" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="num_vert" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="original_id" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="project" qualifiers="const">
+			<return type="PackedVector2Array[]" />
+			<description>
+			</description>
+		</method>
+		<method name="refine" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="splits" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="refine_to_length" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="length" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="refine_to_tolerance" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="tolerance" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="reserve_ids" qualifiers="static">
+			<return type="int" />
+			<param index="0" name="count" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="revolve" qualifiers="static">
+			<return type="Manifold" />
+			<param index="0" name="cross_section" type="PackedVector2Array[]" />
+			<param index="1" name="circular_segments" type="int" default="0" />
+			<param index="2" name="revolve_degrees" type="float" default="360.0" />
+			<description>
+			</description>
+		</method>
+		<method name="rotate" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="x_degrees" type="float" />
+			<param index="1" name="y_degrees" type="float" default="0.0" />
+			<param index="2" name="z_degrees" type="float" default="0.0" />
+			<description>
+			</description>
+		</method>
+		<method name="scale" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="scale" type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="set_properties" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="num_prop" type="int" />
+			<param index="1" name="prop_func" type="Callable" />
+			<description>
+			</description>
+		</method>
+		<method name="set_tolerance" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="tolerance" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="simplify" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="tolerance" type="float" default="0" />
+			<description>
+			</description>
+		</method>
+		<method name="slice" qualifiers="const">
+			<return type="PackedVector2Array[]" />
+			<param index="0" name="height" type="float" default="0" />
+			<description>
+			</description>
+		</method>
+		<method name="smooth_by_normals" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="normal_idx" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="smooth_out" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="min_sharp_angle" type="float" default="60" />
+			<param index="1" name="min_smoothness" type="float" default="0" />
+			<description>
+			</description>
+		</method>
+		<method name="sphere" qualifiers="static">
+			<return type="Manifold" />
+			<param index="0" name="radius" type="float" />
+			<param index="1" name="circular_segments" type="int" default="0" />
+			<description>
+			</description>
+		</method>
+		<method name="split" qualifiers="const">
+			<return type="Manifold[]" />
+			<param index="0" name="manifold" type="Manifold" />
+			<description>
+			</description>
+		</method>
+		<method name="split_by_plane" qualifiers="const">
+			<return type="Manifold[]" />
+			<param index="0" name="plane" type="Plane" />
+			<description>
+			</description>
+		</method>
+		<method name="status" qualifiers="const">
+			<return type="int" enum="Manifold.Error" />
+			<description>
+			</description>
+		</method>
+		<method name="surface_area" qualifiers="const">
+			<return type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="tetrahedron" qualifiers="static">
+			<return type="Manifold" />
+			<description>
+			</description>
+		</method>
+		<method name="to_mesh32" qualifiers="const">
+			<return type="ManifoldMesh32" />
+			<param index="0" name="normal_idx" type="int" default="-1" />
+			<description>
+			</description>
+		</method>
+		<method name="to_mesh64" qualifiers="const">
+			<return type="ManifoldMesh64" />
+			<param index="0" name="normal_idx" type="int" default="-1" />
+			<description>
+			</description>
+		</method>
+		<method name="transform" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="transform" type="Transform3D" />
+			<description>
+			</description>
+		</method>
+		<method name="translate" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="offset" type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="trim_by_plane" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="plane" type="Plane" />
+			<description>
+			</description>
+		</method>
+		<method name="union_batch" qualifiers="static">
+			<return type="Manifold" />
+			<param index="0" name="manifolds" type="Manifold[]" />
+			<description>
+			</description>
+		</method>
+		<method name="union_with" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="second" type="Manifold" />
+			<description>
+			</description>
+		</method>
+		<method name="volume" qualifiers="const">
+			<return type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="warp" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="func" type="Callable" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<constants>
+		<constant name="NO_ERROR" value="0" enum="Error">
+		</constant>
+		<constant name="ERROR_NON_FINITE_VERTEX" value="1" enum="Error">
+		</constant>
+		<constant name="ERROR_NOT_MANIFOLD" value="2" enum="Error">
+		</constant>
+		<constant name="ERROR_VERTEX_OUT_OF_BOUNDS" value="3" enum="Error">
+		</constant>
+		<constant name="ERROR_PROPERTIES_WRONG_LENGTH" value="4" enum="Error">
+		</constant>
+		<constant name="ERROR_MISSING_POSITION_PROPERTIES" value="5" enum="Error">
+		</constant>
+		<constant name="ERROR_MERGE_VECTORS_DIFFERENT_LENGTHS" value="6" enum="Error">
+		</constant>
+		<constant name="ERROR_MERGE_INDEX_OUT_OF_BOUNDS" value="7" enum="Error">
+		</constant>
+		<constant name="ERROR_TRANSFORM_WRONG_LENGTH" value="8" enum="Error">
+		</constant>
+		<constant name="ERROR_RUN_INDEX_WRONG_LENGTH" value="9" enum="Error">
+		</constant>
+		<constant name="ERROR_FACE_ID_WRONG_LENGTH" value="10" enum="Error">
+		</constant>
+		<constant name="ERROR_INVALID_CONSTRUCTION" value="11" enum="Error">
+		</constant>
+		<constant name="ERROR_RESULT_TOO_LARGE" value="12" enum="Error">
+		</constant>
+	</constants>
+</class>

@@ -2,6 +2,8 @@
 
 #include <gdextension_interface.h>
 
+#include <functional>
+
 #include <godot_cpp/classes/material.hpp>
 #include <godot_cpp/classes/mesh.hpp>
 #include <godot_cpp/templates/pair.hpp>
@@ -12,8 +14,11 @@ namespace godot {
 
 namespace manifold {
 	class CrossSection;
+	template<typename, typename> struct MeshGLP;
 	class Manifold;
 }
+
+class Manifold;
 
 class CrossSection : public godot::RefCounted {
 	GDCLASS(CrossSection, godot::RefCounted);
@@ -82,6 +87,201 @@ private:
 };
 VARIANT_ENUM_CAST(CrossSection::FillRule);
 VARIANT_ENUM_CAST(CrossSection::JoinType);
+
+class ManifoldMesh32 : public godot::Resource {
+	GDCLASS(ManifoldMesh32, godot::Resource);
+
+protected:
+	static void _bind_methods();
+
+public:
+	ManifoldMesh32();
+	ManifoldMesh32(const manifold::MeshGLP<float, uint32_t> &p_meshgl);
+	~ManifoldMesh32();
+
+	uint32_t num_vert() const;
+	uint32_t num_tri() const;
+	uint32_t get_num_prop() const;
+	void set_num_prop(uint32_t p_num_prop);
+	godot::PackedFloat32Array get_vert_properties() const;
+	void set_vert_properties(const godot::PackedFloat32Array &p_vert_properties);
+	godot::PackedInt32Array get_tri_verts() const;
+	void set_tri_verts(const godot::PackedInt32Array &p_tri_verts);
+	godot::PackedInt32Array get_merge_from_vert() const;
+	void set_merge_from_vert(const godot::PackedInt32Array &p_merge_from_vert);
+	godot::PackedInt32Array get_merge_to_vert() const;
+	void set_merge_to_vert(const godot::PackedInt32Array &p_merge_to_vert);
+	godot::PackedInt32Array get_run_index() const;
+	void set_run_index(const godot::PackedInt32Array &p_run_index);
+	godot::PackedInt32Array get_run_original_id() const;
+	void set_run_original_id(const godot::PackedInt32Array &p_run_original_id);
+	godot::PackedFloat32Array get_run_transform() const;
+	void set_run_transform(const godot::PackedFloat32Array &p_run_transform);
+	godot::PackedInt32Array get_face_id() const;
+	void set_face_id(const godot::PackedInt32Array &p_face_id);
+	godot::PackedFloat32Array get_halfedge_tangent() const;
+	void set_halfedge_tangent(const godot::PackedFloat32Array &p_halfedge_tangent);
+	float get_tolerance() const;
+	void set_tolerance(float p_tolerance);
+
+	bool merge();
+	godot::Ref<Manifold> to_manifold() const;
+
+private:
+	struct Inner;
+	Inner *_inner;
+};
+
+class ManifoldMesh64 : public godot::Resource {
+	GDCLASS(ManifoldMesh64, godot::Resource);
+
+protected:
+	static void _bind_methods();
+
+public:
+	ManifoldMesh64();
+	ManifoldMesh64(const manifold::MeshGLP<double, uint64_t> &p_meshgl);
+	~ManifoldMesh64();
+
+	uint64_t num_vert() const;
+	uint64_t num_tri() const;
+	uint64_t get_num_prop() const;
+	void set_num_prop(uint64_t p_num_prop);
+	godot::PackedFloat64Array get_vert_properties() const;
+	void set_vert_properties(const godot::PackedFloat64Array &p_vert_properties);
+	godot::PackedInt64Array get_tri_verts() const;
+	void set_tri_verts(const godot::PackedInt64Array &p_tri_verts);
+	godot::PackedInt64Array get_merge_from_vert() const;
+	void set_merge_from_vert(const godot::PackedInt64Array &p_merge_from_vert);
+	godot::PackedInt64Array get_merge_to_vert() const;
+	void set_merge_to_vert(const godot::PackedInt64Array &p_merge_to_vert);
+	godot::PackedInt64Array get_run_index() const;
+	void set_run_index(const godot::PackedInt64Array &p_run_index);
+	godot::PackedInt32Array get_run_original_id() const;
+	void set_run_original_id(const godot::PackedInt32Array &p_run_original_id);
+	godot::PackedFloat64Array get_run_transform() const;
+	void set_run_transform(const godot::PackedFloat64Array &p_run_transform);
+	godot::PackedInt64Array get_face_id() const;
+	void set_face_id(const godot::PackedInt64Array &p_face_id);
+	godot::PackedFloat64Array get_halfedge_tangent() const;
+	void set_halfedge_tangent(const godot::PackedFloat64Array &p_halfedge_tangent);
+	double get_tolerance() const;
+	void set_tolerance(double p_tolerance);
+
+	bool merge();
+	godot::Ref<Manifold> to_manifold() const;
+
+private:
+	struct Inner;
+	Inner *_inner;
+};
+
+class Manifold : public godot::RefCounted {
+	GDCLASS(Manifold, godot::RefCounted);
+
+protected:
+	static void _bind_methods();
+
+public:
+	Manifold();
+	Manifold(const manifold::Manifold &p_manifold);
+	~Manifold();
+
+	godot::Ref<ManifoldMesh32> to_mesh32(int p_normal_idx = -1) const;
+	godot::Ref<ManifoldMesh64> to_mesh64(int p_normal_idx = -1) const;
+
+	godot::TypedArray<Manifold> decompose() const;
+	static godot::Ref<Manifold> compose(const godot::TypedArray<Manifold> &p_manifolds);
+	static godot::Ref<Manifold> tetrahedron();
+	static godot::Ref<Manifold> cube(godot::Vector3 p_size = godot::Vector3(1.0f, 1.0f, 1.0f), bool p_center = false);
+	static godot::Ref<Manifold> cylinder(double p_height, double p_radius_low, double p_radius_high = -1.0, int p_circular_segments = 0, bool p_center = false);
+	static godot::Ref<Manifold> sphere(double p_radius, int p_circular_segments = 0);
+	static godot::Ref<Manifold> level_set_bind(const godot::Callable &p_sdf, godot::AABB p_bounds, double p_edge_length, double p_level = 0, double p_tolerance = -1);
+	static godot::Ref<Manifold> level_set(const std::function<double(godot::Vector3)> &p_sdf, godot::AABB p_bounds, double p_edge_length, double p_level = 0, double p_tolerance = -1);
+
+	godot::TypedArray<godot::PackedVector2Array> slice(double p_height = 0) const;
+	godot::TypedArray<godot::PackedVector2Array> project() const;
+	static godot::Ref<Manifold> extrude(const godot::TypedArray<godot::PackedVector2Array> &p_cross_section, double p_height, int p_num_divisions = 0, double p_twist_degrees = 0.0, godot::Vector2 p_scale_top = godot::Vector2(1.0f, 1.0f));
+	static godot::Ref<Manifold> revolve(const godot::TypedArray<godot::PackedVector2Array> &p_cross_section, int p_circular_segments = 0, double p_revolve_degrees = 360.0f);
+
+	enum Error {
+		NO_ERROR = 0,
+		ERROR_NON_FINITE_VERTEX = 1,
+		ERROR_NOT_MANIFOLD = 2,
+		ERROR_VERTEX_OUT_OF_BOUNDS = 3,
+		ERROR_PROPERTIES_WRONG_LENGTH = 4,
+		ERROR_MISSING_POSITION_PROPERTIES = 5,
+		ERROR_MERGE_VECTORS_DIFFERENT_LENGTHS = 6,
+		ERROR_MERGE_INDEX_OUT_OF_BOUNDS = 7,
+		ERROR_TRANSFORM_WRONG_LENGTH = 8,
+		ERROR_RUN_INDEX_WRONG_LENGTH = 9,
+		ERROR_FACE_ID_WRONG_LENGTH = 10,
+		ERROR_INVALID_CONSTRUCTION = 11,
+		ERROR_RESULT_TOO_LARGE = 12,
+	};
+
+	Error status() const;
+	bool is_empty() const;
+	int64_t num_vert() const;
+	int64_t num_edge() const;
+	int64_t num_tri() const;
+	int64_t num_prop() const;
+	int64_t num_prop_vert() const;
+	godot::AABB bounding_box() const;
+	int genus() const;
+	double get_tolerance() const;
+
+	double surface_area() const;
+	double volume() const;
+	double min_gap(const godot::Ref<Manifold> &p_other, double p_search_length) const;
+
+	int original_id() const;
+	godot::Ref<Manifold> as_original() const;
+	static uint32_t reserve_ids(uint32_t p_count);
+
+	godot::Ref<Manifold> translate(godot::Vector3 p_offset) const;
+	godot::Ref<Manifold> scale(godot::Vector3 p_scale) const;
+	godot::Ref<Manifold> rotate(double p_x_degrees, double p_y_degrees = 0.0, double p_z_degrees = 0.0) const;
+	godot::Ref<Manifold> mirror(godot::Vector3 p_axis) const;
+	godot::Ref<Manifold> transform(const godot::Transform3D &p_transform) const;
+	godot::Ref<Manifold> warp(const std::function<godot::Vector3(godot::Vector3)> &p_func) const;
+	godot::Ref<Manifold> warp_bind(const godot::Callable &p_func) const;
+	godot::Ref<Manifold> set_tolerance(double p_tolerance) const;
+	godot::Ref<Manifold> simplify(double p_tolerance = 0) const;
+
+	godot::Ref<Manifold> union_with(const godot::Ref<Manifold> &p_second) const;
+	static godot::Ref<Manifold> union_batch(const godot::TypedArray<Manifold> &p_manifolds);
+	godot::Ref<Manifold> intersection_with(const godot::Ref<Manifold> &p_second) const;
+	static godot::Ref<Manifold> intersection_batch(const godot::TypedArray<Manifold> &p_manifolds);
+	godot::Ref<Manifold> difference_with(const godot::Ref<Manifold> &p_second) const;
+	static godot::Ref<Manifold> difference_batch(const godot::TypedArray<Manifold> &p_manifolds);
+	godot::Pair<godot::Ref<Manifold>, godot::Ref<Manifold>> split(const godot::Ref<Manifold> &p_manifold) const;
+	godot::TypedArray<Manifold> split_bind(const godot::Ref<Manifold> &p_manifold) const;
+	godot::Pair<godot::Ref<Manifold>, godot::Ref<Manifold>> split_by_plane(godot::Plane p_plane) const;
+	godot::TypedArray<Manifold> split_by_plane_bind(godot::Plane p_plane) const;
+	godot::Ref<Manifold> trim_by_plane(godot::Plane p_plane) const;
+
+	godot::Ref<Manifold> set_properties(int p_num_prop, const std::function<godot::PackedFloat64Array(godot::Vector3, const godot::PackedFloat64Array &)> &p_prop_func) const;
+	godot::Ref<Manifold> set_properties_bind(int p_num_prop, const godot::Callable &p_prop_func) const;
+	godot::Ref<Manifold> calculate_curvature(int p_gaussian_idx, int p_mean_idx) const;
+	godot::Ref<Manifold> calculate_normals(int p_normal_idx, double p_min_sharp_angle = 60) const;
+
+	godot::Ref<Manifold> refine(int p_splits) const;
+	godot::Ref<Manifold> refine_to_length(double p_length) const;
+	godot::Ref<Manifold> refine_to_tolerance(double p_tolerance) const;
+	godot::Ref<Manifold> smooth_by_normals(int p_normal_idx) const;
+	godot::Ref<Manifold> smooth_out(double p_min_sharp_angle = 60, double p_min_smoothness = 0) const;
+
+	godot::Ref<Manifold> hull() const;
+	static godot::Ref<Manifold> hull_batch(const godot::TypedArray<Manifold> &p_manifolds);
+	static godot::Ref<Manifold> hull_points(const godot::PackedVector3Array &p_points);
+
+private:
+	struct Inner;
+	Inner *_inner;
+	friend struct Inner;
+};
+VARIANT_ENUM_CAST(Manifold::Error);
 
 class ManifoldMesh : public godot::Mesh {
 	GDCLASS(ManifoldMesh, godot::Mesh);
