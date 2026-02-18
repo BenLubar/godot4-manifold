@@ -97,8 +97,9 @@ struct Manifold::Inner {
 	static _FORCE_INLINE_ std::vector<manifold::Manifold> to_manifold_vec(const TypedArray<Manifold> &p_manifolds) {
 		std::vector<manifold::Manifold> v;
 		v.resize(p_manifolds.size());
-		std::transform(p_manifolds.begin(), p_manifolds.end(), v.begin(), [](const Ref<Manifold> &p_manifold) -> manifold::Manifold {
-			ERR_FAIL_NULL_V(*p_manifold, manifold::Manifold());
+		std::transform(p_manifolds.begin(), p_manifolds.end(), v.begin(), [](const Ref<Manifold> &p_manifold) -> const manifold::Manifold & {
+			static const manifold::Manifold empty_manifold;
+			ERR_FAIL_NULL_V(*p_manifold, empty_manifold);
 			return p_manifold->_inner->_manifold;
 		});
 		return v;
