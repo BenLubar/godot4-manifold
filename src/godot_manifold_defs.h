@@ -9,14 +9,15 @@
 #include <godot_cpp/templates/pair.hpp>
 
 namespace godot {
-	class ArrayMesh;
+class ArrayMesh;
 }
 
 namespace manifold {
-	class CrossSection;
-	template<typename, typename> struct MeshGLP;
-	class Manifold;
-}
+class CrossSection;
+template <typename, typename>
+struct MeshGLP;
+class Manifold;
+} //namespace manifold
 
 class Manifold;
 
@@ -193,7 +194,6 @@ public:
 	godot::Ref<ManifoldMesh64> to_mesh64(int p_normal_idx = -1) const;
 
 	godot::TypedArray<Manifold> decompose() const;
-	static godot::Ref<Manifold> compose(const godot::TypedArray<Manifold> &p_manifolds);
 	static godot::Ref<Manifold> tetrahedron();
 	static godot::Ref<Manifold> cube(godot::Vector3 p_size = godot::Vector3(1.0f, 1.0f, 1.0f), bool p_center = false);
 	static godot::Ref<Manifold> cylinder(double p_height, double p_radius_low, double p_radius_high = -1.0, int p_circular_segments = 0, bool p_center = false);
@@ -239,6 +239,7 @@ public:
 
 	int original_id() const;
 	godot::Ref<Manifold> as_original() const;
+	godot::Ref<Manifold> merge_runs() const;
 	static uint32_t reserve_ids(uint32_t p_count);
 
 	godot::Ref<Manifold> translate(godot::Vector3 p_offset) const;
@@ -266,13 +267,13 @@ public:
 	godot::Ref<Manifold> set_properties(int p_num_prop, const std::function<godot::PackedFloat64Array(godot::Vector3, const godot::PackedFloat64Array &)> &p_prop_func) const;
 	godot::Ref<Manifold> set_properties_bind(int p_num_prop, const godot::Callable &p_prop_func) const;
 	godot::Ref<Manifold> calculate_curvature(int p_gaussian_idx, int p_mean_idx) const;
-	godot::Ref<Manifold> calculate_normals(int p_normal_idx, double p_min_sharp_angle = 60) const;
+	godot::Ref<Manifold> calculate_normals(int p_normal_idx = 0, double p_min_sharp_angle = 52.5) const;
 
 	godot::Ref<Manifold> refine(int p_splits) const;
 	godot::Ref<Manifold> refine_to_length(double p_length) const;
 	godot::Ref<Manifold> refine_to_tolerance(double p_tolerance) const;
 	godot::Ref<Manifold> smooth_by_normals(int p_normal_idx) const;
-	godot::Ref<Manifold> smooth_out(double p_min_sharp_angle = 60, double p_min_smoothness = 0) const;
+	godot::Ref<Manifold> smooth_out(double p_min_sharp_angle = 52.5, double p_min_smoothness = 0) const;
 
 	godot::Ref<Manifold> hull() const;
 	static godot::Ref<Manifold> hull_batch(const godot::TypedArray<Manifold> &p_manifolds);
@@ -381,7 +382,6 @@ public:
 	godot::Ref<godot::ArrayMesh> to_mesh(bool p_generate_lods = true, bool p_create_shadow_mesh = true, const godot::TypedArray<godot::Material> &p_skip_material = {}) const;
 
 	godot::TypedArray<ManifoldMesh> decompose() const;
-	static godot::Ref<ManifoldMesh> compose(const godot::TypedArray<ManifoldMesh> &p_manifolds);
 	static godot::Ref<ManifoldMesh> tetrahedron(const godot::Ref<godot::Material> &p_material = nullptr);
 	static godot::Ref<ManifoldMesh> cube(const godot::Vector3 &p_size = godot::Vector3(1.0f, 1.0f, 1.0f), bool p_center = false, const godot::Ref<godot::Material> &p_material = nullptr);
 	static godot::Ref<ManifoldMesh> cylinder(double p_height, double p_radius_low, double p_radius_high = -1.0, int32_t p_circular_segments = 0, bool p_center = false, const godot::Ref<godot::Material> &p_material = nullptr);

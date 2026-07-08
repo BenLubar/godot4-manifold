@@ -1,5 +1,5 @@
-#include "godot_manifold_defs.h"
 #include "godot_manifold_converters.h"
+#include "godot_manifold_defs.h"
 
 #include <godot_cpp/core/class_db.hpp>
 
@@ -12,7 +12,6 @@ void Manifold::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("to_mesh64", "normal_idx"), &Manifold::to_mesh64, DEFVAL(-1));
 
 	ClassDB::bind_method(D_METHOD("decompose"), &Manifold::decompose);
-	ClassDB::bind_static_method(get_class_static(), D_METHOD("compose", "manifolds"), &Manifold::compose);
 	ClassDB::bind_static_method(get_class_static(), D_METHOD("tetrahedron"), &Manifold::tetrahedron);
 	ClassDB::bind_static_method(get_class_static(), D_METHOD("cube", "size", "center"), &Manifold::cube, DEFVAL(Vector3(1.0f, 1.0f, 1.0f)), DEFVAL(false));
 	ClassDB::bind_static_method(get_class_static(), D_METHOD("cylinder", "height", "radius_low", "radius_high", "circular_segments", "center"), &Manifold::cylinder, DEFVAL(-1.0), DEFVAL(0), DEFVAL(false));
@@ -55,6 +54,7 @@ void Manifold::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("original_id"), &Manifold::original_id);
 	ClassDB::bind_method(D_METHOD("as_original"), &Manifold::as_original);
+	ClassDB::bind_method(D_METHOD("merge_runs"), &Manifold::merge_runs);
 	ClassDB::bind_static_method(get_class_static(), D_METHOD("reserve_ids", "count"), &Manifold::reserve_ids);
 
 	ClassDB::bind_method(D_METHOD("translate", "offset"), &Manifold::translate);
@@ -78,13 +78,13 @@ void Manifold::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_properties", "num_prop", "prop_func"), &Manifold::set_properties_bind);
 	ClassDB::bind_method(D_METHOD("calculate_curvature", "gaussian_idx", "mean_idx"), &Manifold::calculate_curvature);
-	ClassDB::bind_method(D_METHOD("calculate_normals", "normal_idx", "min_sharp_angle"), &Manifold::calculate_normals, DEFVAL(60));
+	ClassDB::bind_method(D_METHOD("calculate_normals", "normal_idx", "min_sharp_angle"), &Manifold::calculate_normals, DEFVAL(0), DEFVAL(52.5));
 
 	ClassDB::bind_method(D_METHOD("refine", "splits"), &Manifold::refine);
 	ClassDB::bind_method(D_METHOD("refine_to_length", "length"), &Manifold::refine_to_length);
 	ClassDB::bind_method(D_METHOD("refine_to_tolerance", "tolerance"), &Manifold::refine_to_tolerance);
 	ClassDB::bind_method(D_METHOD("smooth_by_normals", "normal_idx"), &Manifold::smooth_by_normals);
-	ClassDB::bind_method(D_METHOD("smooth_out", "min_sharp_angle", "min_smoothness"), &Manifold::smooth_out, DEFVAL(60), DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("smooth_out", "min_sharp_angle", "min_smoothness"), &Manifold::smooth_out, DEFVAL(52.5), DEFVAL(0));
 
 	ClassDB::bind_method(D_METHOD("hull"), &Manifold::hull);
 	ClassDB::bind_static_method(get_class_static(), D_METHOD("hull_batch", "manifolds"), &Manifold::hull_batch);
@@ -136,9 +136,6 @@ Ref<ManifoldMesh64> Manifold::to_mesh64(int p_normal_idx) const {
 TypedArray<Manifold> Manifold::decompose() const {
 	return Inner::from_manifold_vec(_inner->_manifold.Decompose());
 }
-Ref<Manifold> Manifold::compose(const TypedArray<Manifold> &p_manifolds) {
-	return memnew(Manifold(manifold::Manifold::Compose(Inner::to_manifold_vec(p_manifolds))));
-}
 Ref<Manifold> Manifold::tetrahedron() {
 	return memnew(Manifold(manifold::Manifold::Tetrahedron()));
 }
@@ -154,7 +151,8 @@ Ref<Manifold> Manifold::sphere(double p_radius, int p_circular_segments) {
 Ref<Manifold> Manifold::level_set_bind(const Callable &p_sdf, AABB p_bounds, double p_edge_length, double p_level, double p_tolerance) {
 	return level_set([p_sdf](Vector3 p_vec) -> double {
 		return p_sdf.call(p_vec);
-	}, p_bounds, p_edge_length, p_level, p_tolerance);
+	},
+			p_bounds, p_edge_length, p_level, p_tolerance);
 }
 Ref<Manifold> Manifold::level_set(const std::function<double(Vector3)> &p_sdf, AABB p_bounds, double p_edge_length, double p_level, double p_tolerance) {
 	const auto sdf = [p_sdf](manifold::vec3 p_vec) -> double {
@@ -224,6 +222,24 @@ int Manifold::original_id() const {
 Ref<Manifold> Manifold::as_original() const {
 	return memnew(Manifold(_inner->_manifold.AsOriginal()));
 }
+Ref<Manifold> Manifold::merge_runs() const {
+	manifold::MeshGL64 mesh = _inner->_manifold.GetMeshGL64();
+	mesh.faceID.clear();
+	mesh.runTransform.clear();
+	for (size_t i = 1; i < mesh.runOriginalID.size();) {
+		if (mesh.runOriginalID[i] != mesh.runOriginalID[i - 1]) {
+			i++;
+			continue;
+		}
+
+		mesh.runFlags.erase(mesh.runFlags.begin() + i);
+		mesh.runIndex.erase(mesh.runIndex.begin() + i);
+		mesh.runOriginalID.erase(mesh.runOriginalID.begin() + i);
+
+		// TODO: reorder indices/runs?
+	}
+	return memnew(Manifold(manifold::Manifold(mesh)));
+}
 uint32_t Manifold::reserve_ids(uint32_t p_count) {
 	return manifold::Manifold::ReserveIDs(p_count);
 }
@@ -289,7 +305,7 @@ TypedArray<Manifold> Manifold::split_bind(const Ref<Manifold> &p_manifold) const
 Pair<Ref<Manifold>, Ref<Manifold>> Manifold::split(const Ref<Manifold> &p_manifold) const {
 	ERR_FAIL_NULL_V(*p_manifold, {});
 	const std::pair<manifold::Manifold, manifold::Manifold> s = _inner->_manifold.Split(p_manifold->_inner->_manifold);
-	return {memnew(Manifold(s.first)), memnew(Manifold(s.second))};
+	return { memnew(Manifold(s.first)), memnew(Manifold(s.second)) };
 }
 TypedArray<Manifold> Manifold::split_by_plane_bind(Plane p_plane) const {
 	const Pair<Ref<Manifold>, Ref<Manifold>> s = split_by_plane(p_plane);
@@ -297,7 +313,7 @@ TypedArray<Manifold> Manifold::split_by_plane_bind(Plane p_plane) const {
 }
 Pair<Ref<Manifold>, Ref<Manifold>> Manifold::split_by_plane(Plane p_plane) const {
 	const std::pair<manifold::Manifold, manifold::Manifold> s = _inner->_manifold.SplitByPlane(to_vec3(p_plane.normal), p_plane.d);
-	return {memnew(Manifold(s.first)), memnew(Manifold(s.second))};
+	return { memnew(Manifold(s.first)), memnew(Manifold(s.second)) };
 }
 Ref<Manifold> Manifold::trim_by_plane(Plane p_plane) const {
 	return memnew(Manifold(_inner->_manifold.TrimByPlane(to_vec3(p_plane.normal), p_plane.d)));

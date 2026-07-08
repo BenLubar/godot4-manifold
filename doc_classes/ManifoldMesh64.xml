@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<class name="ManifoldMesh64" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+<class name="ManifoldMesh64" inherits="Resource" api_type="extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
 	<brief_description>
 	</brief_description>
 	<description>
@@ -24,6 +24,12 @@
 		</method>
 		<method name="to_manifold" qualifiers="const">
 			<return type="Manifold" />
+			<description>
+			</description>
+		</method>
+		<method name="to_manifold_with_original_id" qualifiers="const">
+			<return type="Manifold" />
+			<param index="0" name="original_id" type="int" />
 			<description>
 			</description>
 		</method>

@@ -1,5 +1,5 @@
-#include "godot_manifold_defs.h"
 #include "godot_manifold_converters.h"
+#include "godot_manifold_defs.h"
 
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/templates/hash_map.hpp>
@@ -69,9 +69,9 @@ void ManifoldMesh::_bind_methods() {
 	constexpr Variant::Type PACKED_I_ARRAY = static_cast<Variant::Type>(GetTypeInfo<PackedIArray>::VARIANT_TYPE);
 
 	ADD_GROUP("Mesh", "");
-#define BIND_PROPERTY(m_variant_type, m_name) \
+#define BIND_PROPERTY(m_variant_type, m_name)                                             \
 	ClassDB::bind_method(D_METHOD("set_" #m_name, #m_name), &ManifoldMesh::set_##m_name); \
-	ClassDB::bind_method(D_METHOD("get_" #m_name), &ManifoldMesh::get_##m_name); \
+	ClassDB::bind_method(D_METHOD("get_" #m_name), &ManifoldMesh::get_##m_name);          \
 	ADD_PROPERTY(PropertyInfo(m_variant_type, #m_name), "set_" #m_name, "get_" #m_name)
 	BIND_PROPERTY(Variant::INT, num_prop);
 	BIND_PROPERTY(PACKED_REAL_ARRAY, vert_properties);
@@ -91,7 +91,6 @@ void ManifoldMesh::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("to_mesh", "generate_lods", "create_shadow_mesh", "skip_material"), &ManifoldMesh::to_mesh, DEFVAL(true), DEFVAL(true), DEFVAL(TypedArray<Material>()));
 
 	ClassDB::bind_method(D_METHOD("decompose"), &ManifoldMesh::decompose);
-	ClassDB::bind_static_method(get_class_static(), D_METHOD("compose", "manifolds"), &ManifoldMesh::compose);
 	ClassDB::bind_static_method(get_class_static(), D_METHOD("tetrahedron", "material"), &ManifoldMesh::tetrahedron, DEFVAL(nullptr));
 	ClassDB::bind_static_method(get_class_static(), D_METHOD("cube", "size", "center", "material"), &ManifoldMesh::cube, DEFVAL(Vector3(1.0f, 1.0f, 1.0f)), DEFVAL(false), DEFVAL(nullptr));
 	ClassDB::bind_static_method(get_class_static(), D_METHOD("cylinder", "height", "radius_low", "radius_high", "circular_segments", "center", "material"), &ManifoldMesh::cylinder, DEFVAL(-1.0), DEFVAL(0), DEFVAL(false), DEFVAL(nullptr));
@@ -260,29 +259,29 @@ void ManifoldMesh::remove_unused_materials() {
 	}
 }
 
-#define SET_VALUE(m_prop, m_param) \
-	_ensure_meshgl(); \
-	m_prop = m_param; \
+#define SET_VALUE(m_prop, m_param)  \
+	_ensure_meshgl();               \
+	m_prop = m_param;               \
 	_inner->_manifold_dirty = true; \
-	_inner->_arrays.clear(); \
+	_inner->_arrays.clear();        \
 	emit_changed()
-#define SET_ARRAY(m_prop, m_param) \
-	_ensure_meshgl(); \
-	m_prop.resize(m_param.size()); \
-	static_assert(sizeof(m_param[0]) == sizeof(m_prop[0])); \
+#define SET_ARRAY(m_prop, m_param)                                            \
+	_ensure_meshgl();                                                         \
+	m_prop.resize(m_param.size());                                            \
+	static_assert(sizeof(m_param[0]) == sizeof(m_prop[0]));                   \
 	std::copy(m_param.ptr(), m_param.ptr() + m_param.size(), m_prop.begin()); \
-	_inner->_manifold_dirty = true; \
-	_inner->_arrays.clear(); \
+	_inner->_manifold_dirty = true;                                           \
+	_inner->_arrays.clear();                                                  \
 	emit_changed()
 
 #define GET_VALUE(m_prop) \
-	_ensure_meshgl(); \
+	_ensure_meshgl();     \
 	return m_prop
-#define GET_ARRAY(m_packed, m_prop) \
-	_ensure_meshgl(); \
-	m_packed array; \
-	static_assert(sizeof(array[0]) == sizeof(m_prop[0])); \
-	array.resize(m_prop.size()); \
+#define GET_ARRAY(m_packed, m_prop)                        \
+	_ensure_meshgl();                                      \
+	m_packed array;                                        \
+	static_assert(sizeof(array[0]) == sizeof(m_prop[0]));  \
+	array.resize(m_prop.size());                           \
 	std::copy(m_prop.begin(), m_prop.end(), array.ptrw()); \
 	return array
 
@@ -699,23 +698,6 @@ TypedArray<ManifoldMesh> ManifoldMesh::decompose() const {
 	return decomposed_wrapped;
 }
 
-Ref<ManifoldMesh> ManifoldMesh::compose(const TypedArray<ManifoldMesh> &p_manifolds) {
-	Vector<Ref<ManifoldMesh>> wrapped_manifolds;
-	wrapped_manifolds.resize(p_manifolds.size());
-
-	std::vector<manifold::Manifold> manifolds;
-	manifolds.resize(p_manifolds.size());
-
-	for (int64_t i = 0; i < p_manifolds.size(); i++) {
-		const Ref<ManifoldMesh> manifold = p_manifolds[i];
-		ERR_FAIL_COND_V(manifold.is_null(), Ref<ManifoldMesh>());
-		wrapped_manifolds.write[i] = manifold;
-		manifold->_ensure_manifold();
-		manifolds[i] = manifold->_inner->_manifold;
-	}
-
-	return _new_merged_manifold(manifold::Manifold::Compose(manifolds), wrapped_manifolds);
-}
 Ref<ManifoldMesh> ManifoldMesh::tetrahedron(const Ref<Material> &p_material) {
 	return _primitive(manifold::Manifold::Tetrahedron(), p_material, "tetrahedron");
 }
@@ -731,7 +713,9 @@ Ref<ManifoldMesh> ManifoldMesh::sphere(double p_radius, int32_t p_circular_segme
 Ref<ManifoldMesh> ManifoldMesh::level_set(const Callable &p_sdf, const AABB &p_bounds, double p_edge_length, double p_level, double p_tolerance, const Ref<Material> &p_material) {
 	return _primitive(manifold::Manifold::LevelSet([p_sdf](manifold::vec3 p_coord) -> double {
 		return p_sdf.call(from_vec3(p_coord));
-	}, to_box(p_bounds), p_edge_length, p_level, p_tolerance, false), p_material, "level_set");
+	},
+							  to_box(p_bounds), p_edge_length, p_level, p_tolerance, false),
+			p_material, "level_set");
 }
 
 TypedArray<PackedVector2Array> ManifoldMesh::slice(double p_height) const {
@@ -854,19 +838,19 @@ Ref<ManifoldMesh> ManifoldMesh::union_with(const Ref<ManifoldMesh> &p_with) cons
 	ERR_FAIL_COND_V(p_with.is_null(), Ref<ManifoldMesh>());
 	p_with->_ensure_manifold();
 	_ensure_manifold();
-	return _new_merged_manifold(_inner->_manifold + p_with->_inner->_manifold, {{{this}, p_with}});
+	return _new_merged_manifold(_inner->_manifold + p_with->_inner->_manifold, { { { this }, p_with } });
 }
 Ref<ManifoldMesh> ManifoldMesh::intersection_with(const Ref<ManifoldMesh> &p_with) const {
 	ERR_FAIL_COND_V(p_with.is_null(), Ref<ManifoldMesh>());
 	p_with->_ensure_manifold();
 	_ensure_manifold();
-	return _new_merged_manifold(_inner->_manifold ^ p_with->_inner->_manifold, {{{this}, p_with}});
+	return _new_merged_manifold(_inner->_manifold ^ p_with->_inner->_manifold, { { { this }, p_with } });
 }
 Ref<ManifoldMesh> ManifoldMesh::difference_with(const Ref<ManifoldMesh> &p_with) const {
 	ERR_FAIL_COND_V(p_with.is_null(), Ref<ManifoldMesh>());
 	p_with->_ensure_manifold();
 	_ensure_manifold();
-	return _new_merged_manifold(_inner->_manifold - p_with->_inner->_manifold, {{{this}, p_with}});
+	return _new_merged_manifold(_inner->_manifold - p_with->_inner->_manifold, { { { this }, p_with } });
 }
 Ref<ManifoldMesh> ManifoldMesh::batch_union(const TypedArray<ManifoldMesh> &p_manifolds) {
 	Vector<Ref<ManifoldMesh>> wrapped_manifolds;
@@ -925,7 +909,7 @@ Pair<Ref<ManifoldMesh>, Ref<ManifoldMesh>> ManifoldMesh::split(const Ref<Manifol
 	p_manifold->_ensure_manifold();
 	_ensure_manifold();
 	const std::pair<manifold::Manifold, manifold::Manifold> pair = _inner->_manifold.Split(p_manifold->_inner->_manifold);
-	return {_new_manifold(pair.first), _new_manifold(pair.second)};
+	return { _new_manifold(pair.first), _new_manifold(pair.second) };
 }
 TypedArray<ManifoldMesh> ManifoldMesh::split_bind(const Ref<ManifoldMesh> &p_manifold) const {
 	const Pair<Ref<ManifoldMesh>, Ref<ManifoldMesh>> pair = split(p_manifold);
@@ -942,18 +926,18 @@ Ref<ManifoldMesh> ManifoldMesh::trim_by_plane(const Plane &p_plane, const godot:
 	return intersection_with(_halfspace(p_plane, p_material));
 }
 
-#define WARN_IF_UNUSED_FORMAT(m_format) \
-	{ \
-		bool uses_format = false; \
-		for (int64_t i = 0; i < _surface_formats.size(); i++) { \
-			if (_surface_formats[i] & ARRAY_FORMAT_##m_format) { \
-				uses_format = true; \
-				break; \
-			} \
-		} \
-		if (unlikely(!uses_format)) { \
+#define WARN_IF_UNUSED_FORMAT(m_format)                                                                                                                        \
+	{                                                                                                                                                          \
+		bool uses_format = false;                                                                                                                              \
+		for (int64_t i = 0; i < _surface_formats.size(); i++) {                                                                                                \
+			if (_surface_formats[i] & ARRAY_FORMAT_##m_format) {                                                                                               \
+				uses_format = true;                                                                                                                            \
+				break;                                                                                                                                         \
+			}                                                                                                                                                  \
+		}                                                                                                                                                      \
+		if (unlikely(!uses_format)) {                                                                                                                          \
 			WARN_PRINT("No material in this mesh uses the " #m_format " vertex attribute. Modify the surface_formats property before calling this function."); \
-		} \
+		}                                                                                                                                                      \
 	}
 Ref<ManifoldMesh> ManifoldMesh::modify_normal(const Callable &p_modify, bool p_normalize) const {
 	WARN_IF_UNUSED_FORMAT(NORMAL);
@@ -961,20 +945,21 @@ Ref<ManifoldMesh> ManifoldMesh::modify_normal(const Callable &p_modify, bool p_n
 	const int32_t num_prop = _inner->_manifold.NumProp();
 	DEV_ASSERT(num_prop <= 0 || num_prop >= 3);
 	return _new_manifold(_inner->_manifold.SetProperties(Math::max(num_prop, 3), [p_modify, p_normalize, num_prop](double *p_new_prop, manifold::vec3 p_position, const double *p_old_prop) -> void {
-		Vector3 normal;
-		if (num_prop >= 3) {
-			normal.x = static_cast<real_t>(p_old_prop[0]);
-			normal.y = static_cast<real_t>(p_old_prop[1]);
-			normal.z = static_cast<real_t>(p_old_prop[2]);
-		}
-		normal = p_modify.call(from_vec3(p_position), normal);
-		if (p_normalize) {
-			normal.normalize();
-		}
-		p_new_prop[0] = normal.x;
-		p_new_prop[1] = normal.y;
-		p_new_prop[2] = normal.z;
-	}).SmoothByNormals(0));
+											  Vector3 normal;
+											  if (num_prop >= 3) {
+												  normal.x = static_cast<real_t>(p_old_prop[0]);
+												  normal.y = static_cast<real_t>(p_old_prop[1]);
+												  normal.z = static_cast<real_t>(p_old_prop[2]);
+											  }
+											  normal = p_modify.call(from_vec3(p_position), normal);
+											  if (p_normalize) {
+												  normal.normalize();
+											  }
+											  p_new_prop[0] = normal.x;
+											  p_new_prop[1] = normal.y;
+											  p_new_prop[2] = normal.z;
+										  })
+					.SmoothByNormals(0));
 }
 Ref<ManifoldMesh> ManifoldMesh::modify_tex_uv(const Callable &p_modify) const {
 	WARN_IF_UNUSED_FORMAT(TEX_UV);
@@ -1098,72 +1083,72 @@ static Variant _encode_custom_array(Mesh::ArrayCustomFormat format, const Packed
 	PackedFloat32Array floats;
 
 	switch (format) {
-	case Mesh::ARRAY_CUSTOM_RGBA8_UNORM:
-		bytes.resize(colors.size() * 4);
-		for (int64_t i = 0, j = 0; i < colors.size(); i++, j += 4) {
-			bytes[j + 0] = uint8_t(Math::clamp(colors[i].r * 255.0f, 0.0f, 255.0f));
-			bytes[j + 1] = uint8_t(Math::clamp(colors[i].g * 255.0f, 0.0f, 255.0f));
-			bytes[j + 2] = uint8_t(Math::clamp(colors[i].b * 255.0f, 0.0f, 255.0f));
-			bytes[j + 3] = uint8_t(Math::clamp(colors[i].a * 255.0f, 0.0f, 255.0f));
-		}
-		return bytes;
-	case Mesh::ARRAY_CUSTOM_RGBA8_SNORM:
-		bytes.resize(colors.size() * 4);
-		for (int64_t i = 0, j = 0; i < colors.size(); i++, j += 4) {
-			bytes[j + 0] = uint8_t(int8_t(Math::clamp(colors[i].r * 127.0f, -127.0f, 127.0f)));
-			bytes[j + 1] = uint8_t(int8_t(Math::clamp(colors[i].g * 127.0f, -127.0f, 127.0f)));
-			bytes[j + 2] = uint8_t(int8_t(Math::clamp(colors[i].b * 127.0f, -127.0f, 127.0f)));
-			bytes[j + 3] = uint8_t(int8_t(Math::clamp(colors[i].a * 127.0f, -127.0f, 127.0f)));
-		}
-		return bytes;
-	case Mesh::ARRAY_CUSTOM_RG_HALF:
-		bytes.resize(colors.size() * 4);
-		for (int64_t i = 0, j = 0; i < colors.size(); i++, j += 4) {
-			bytes.encode_half(j + 0, colors[i].r);
-			bytes.encode_half(j + 2, colors[i].g);
-		}
-		return bytes;
-	case Mesh::ARRAY_CUSTOM_RGBA_HALF:
-		bytes.resize(colors.size() * 8);
-		for (int64_t i = 0, j = 0; i < colors.size(); i++, j += 8) {
-			bytes.encode_half(j + 0, colors[i].r);
-			bytes.encode_half(j + 2, colors[i].g);
-			bytes.encode_half(j + 4, colors[i].b);
-			bytes.encode_half(j + 6, colors[i].a);
-		}
-		return bytes;
-	case Mesh::ARRAY_CUSTOM_R_FLOAT:
-		floats.resize(colors.size());
-		for (int64_t i = 0; i < colors.size(); i++) {
-			floats[i] = colors[i].r;
-		}
-		return floats;
-	case Mesh::ARRAY_CUSTOM_RG_FLOAT:
-		floats.resize(colors.size() * 2);
-		for (int64_t i = 0, j = 0; i < colors.size(); i++, j += 2) {
-			floats[j + 0] = colors[i].r;
-			floats[j + 1] = colors[i].g;
-		}
-		return floats;
-	case Mesh::ARRAY_CUSTOM_RGB_FLOAT:
-		floats.resize(colors.size() * 3);
-		for (int64_t i = 0, j = 0; i < colors.size(); i++, j += 3) {
-			floats[j + 0] = colors[i].r;
-			floats[j + 1] = colors[i].g;
-			floats[j + 2] = colors[i].b;
-		}
-		return floats;
-	case Mesh::ARRAY_CUSTOM_RGBA_FLOAT:
-		floats.resize(colors.size() * 4);
-		for (int64_t i = 0, j = 0; i < colors.size(); i++, j += 4) {
-			floats[j + 0] = colors[i].r;
-			floats[j + 1] = colors[i].g;
-			floats[j + 2] = colors[i].b;
-			floats[j + 3] = colors[i].a;
-		}
-		return floats;
-	case Mesh::ARRAY_CUSTOM_MAX:
-		break;
+		case Mesh::ARRAY_CUSTOM_RGBA8_UNORM:
+			bytes.resize(colors.size() * 4);
+			for (int64_t i = 0, j = 0; i < colors.size(); i++, j += 4) {
+				bytes[j + 0] = uint8_t(Math::clamp(colors[i].r * 255.0f, 0.0f, 255.0f));
+				bytes[j + 1] = uint8_t(Math::clamp(colors[i].g * 255.0f, 0.0f, 255.0f));
+				bytes[j + 2] = uint8_t(Math::clamp(colors[i].b * 255.0f, 0.0f, 255.0f));
+				bytes[j + 3] = uint8_t(Math::clamp(colors[i].a * 255.0f, 0.0f, 255.0f));
+			}
+			return bytes;
+		case Mesh::ARRAY_CUSTOM_RGBA8_SNORM:
+			bytes.resize(colors.size() * 4);
+			for (int64_t i = 0, j = 0; i < colors.size(); i++, j += 4) {
+				bytes[j + 0] = uint8_t(int8_t(Math::clamp(colors[i].r * 127.0f, -127.0f, 127.0f)));
+				bytes[j + 1] = uint8_t(int8_t(Math::clamp(colors[i].g * 127.0f, -127.0f, 127.0f)));
+				bytes[j + 2] = uint8_t(int8_t(Math::clamp(colors[i].b * 127.0f, -127.0f, 127.0f)));
+				bytes[j + 3] = uint8_t(int8_t(Math::clamp(colors[i].a * 127.0f, -127.0f, 127.0f)));
+			}
+			return bytes;
+		case Mesh::ARRAY_CUSTOM_RG_HALF:
+			bytes.resize(colors.size() * 4);
+			for (int64_t i = 0, j = 0; i < colors.size(); i++, j += 4) {
+				bytes.encode_half(j + 0, colors[i].r);
+				bytes.encode_half(j + 2, colors[i].g);
+			}
+			return bytes;
+		case Mesh::ARRAY_CUSTOM_RGBA_HALF:
+			bytes.resize(colors.size() * 8);
+			for (int64_t i = 0, j = 0; i < colors.size(); i++, j += 8) {
+				bytes.encode_half(j + 0, colors[i].r);
+				bytes.encode_half(j + 2, colors[i].g);
+				bytes.encode_half(j + 4, colors[i].b);
+				bytes.encode_half(j + 6, colors[i].a);
+			}
+			return bytes;
+		case Mesh::ARRAY_CUSTOM_R_FLOAT:
+			floats.resize(colors.size());
+			for (int64_t i = 0; i < colors.size(); i++) {
+				floats[i] = colors[i].r;
+			}
+			return floats;
+		case Mesh::ARRAY_CUSTOM_RG_FLOAT:
+			floats.resize(colors.size() * 2);
+			for (int64_t i = 0, j = 0; i < colors.size(); i++, j += 2) {
+				floats[j + 0] = colors[i].r;
+				floats[j + 1] = colors[i].g;
+			}
+			return floats;
+		case Mesh::ARRAY_CUSTOM_RGB_FLOAT:
+			floats.resize(colors.size() * 3);
+			for (int64_t i = 0, j = 0; i < colors.size(); i++, j += 3) {
+				floats[j + 0] = colors[i].r;
+				floats[j + 1] = colors[i].g;
+				floats[j + 2] = colors[i].b;
+			}
+			return floats;
+		case Mesh::ARRAY_CUSTOM_RGBA_FLOAT:
+			floats.resize(colors.size() * 4);
+			for (int64_t i = 0, j = 0; i < colors.size(); i++, j += 4) {
+				floats[j + 0] = colors[i].r;
+				floats[j + 1] = colors[i].g;
+				floats[j + 2] = colors[i].b;
+				floats[j + 3] = colors[i].a;
+			}
+			return floats;
+		case Mesh::ARRAY_CUSTOM_MAX:
+			break;
 	}
 
 	ERR_FAIL_V(Variant());
@@ -1246,7 +1231,7 @@ void ManifoldMesh::_unpack_to_arrays(uint32_t original_id, PackedVector3Array &p
 		const size_t first_index = _inner->_meshgl.runIndex[i];
 		const size_t last_index = _inner->_meshgl.runIndex[i + 1];
 		for (size_t j0 = first_index; j0 < last_index; j0 += 3) {
-			for (size_t j : {j0 + 0, j0 + 2, j0 + 1}) {
+			for (size_t j : { j0 + 0, j0 + 2, j0 + 1 }) {
 				const uint32_t vertex = _inner->_meshgl.triVerts[j] * _inner->_meshgl.numProp;
 
 				DEV_ASSERT(_inner->_meshgl.numProp >= 3);
@@ -1384,112 +1369,112 @@ void ManifoldMesh::_init_custom(const Array &arrays, I vertex, I stride, I offse
 	PackedFloat32Array floats;
 
 	switch (custom_format) {
-	case ARRAY_CUSTOM_RGBA8_UNORM:
-		bytes = arrays[type];
-		DEV_ASSERT(bytes.size() % 4 == 0);
+		case ARRAY_CUSTOM_RGBA8_UNORM:
+			bytes = arrays[type];
+			DEV_ASSERT(bytes.size() % 4 == 0);
 
-		for (I i = 0; i < bytes.size(); i += 4) {
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = bytes[i + 0] / 255.0f;
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = bytes[i + 1] / 255.0f;
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = bytes[i + 2] / 255.0f;
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = bytes[i + 3] / 255.0f;
-			vertex++;
-		}
+			for (I i = 0; i < bytes.size(); i += 4) {
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = bytes[i + 0] / 255.0f;
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = bytes[i + 1] / 255.0f;
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = bytes[i + 2] / 255.0f;
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = bytes[i + 3] / 255.0f;
+				vertex++;
+			}
 
-		break;
-	case ARRAY_CUSTOM_RGBA8_SNORM:
-		bytes = arrays[type];
-		DEV_ASSERT(bytes.size() % 4 == 0);
+			break;
+		case ARRAY_CUSTOM_RGBA8_SNORM:
+			bytes = arrays[type];
+			DEV_ASSERT(bytes.size() % 4 == 0);
 
-		for (I i = 0; i < bytes.size(); i += 4) {
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = Math::max(int8_t(bytes[i + 0]) / 127.0f, -1.0f);
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = Math::max(int8_t(bytes[i + 1]) / 127.0f, -1.0f);
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = Math::max(int8_t(bytes[i + 2]) / 127.0f, -1.0f);
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = Math::max(int8_t(bytes[i + 3]) / 127.0f, -1.0f);
-			vertex++;
-		}
+			for (I i = 0; i < bytes.size(); i += 4) {
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = Math::max(int8_t(bytes[i + 0]) / 127.0f, -1.0f);
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = Math::max(int8_t(bytes[i + 1]) / 127.0f, -1.0f);
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = Math::max(int8_t(bytes[i + 2]) / 127.0f, -1.0f);
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = Math::max(int8_t(bytes[i + 3]) / 127.0f, -1.0f);
+				vertex++;
+			}
 
-		break;
-	case ARRAY_CUSTOM_RG_HALF:
-		bytes = arrays[type];
-		DEV_ASSERT(bytes.size() % 4 == 0);
+			break;
+		case ARRAY_CUSTOM_RG_HALF:
+			bytes = arrays[type];
+			DEV_ASSERT(bytes.size() % 4 == 0);
 
-		for (I i = 0; i < bytes.size(); i += 4) {
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = bytes.decode_half(i + 0);
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = bytes.decode_half(i + 2);
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = 0;
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = 0;
-			vertex++;
-		}
+			for (I i = 0; i < bytes.size(); i += 4) {
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = bytes.decode_half(i + 0);
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = bytes.decode_half(i + 2);
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = 0;
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = 0;
+				vertex++;
+			}
 
-		break;
-	case ARRAY_CUSTOM_RGBA_HALF:
-		bytes = arrays[type];
-		DEV_ASSERT(bytes.size() % 8 == 0);
+			break;
+		case ARRAY_CUSTOM_RGBA_HALF:
+			bytes = arrays[type];
+			DEV_ASSERT(bytes.size() % 8 == 0);
 
-		for (I i = 0; i < bytes.size(); i += 4) {
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = bytes.decode_half(i + 0);
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = bytes.decode_half(i + 2);
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = bytes.decode_half(i + 4);
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = bytes.decode_half(i + 6);
-			vertex++;
-		}
+			for (I i = 0; i < bytes.size(); i += 4) {
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = bytes.decode_half(i + 0);
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = bytes.decode_half(i + 2);
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = bytes.decode_half(i + 4);
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = bytes.decode_half(i + 6);
+				vertex++;
+			}
 
-		break;
-	case ARRAY_CUSTOM_R_FLOAT:
-		floats = arrays[type];
-		DEV_ASSERT(floats.size() % 1 == 0);
+			break;
+		case ARRAY_CUSTOM_R_FLOAT:
+			floats = arrays[type];
+			DEV_ASSERT(floats.size() % 1 == 0);
 
-		for (I i = 0; i < floats.size(); i++) {
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = floats[i + 0];
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = 0;
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = 0;
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = 0;
-			vertex++;
-		}
+			for (I i = 0; i < floats.size(); i++) {
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = floats[i + 0];
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = 0;
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = 0;
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = 0;
+				vertex++;
+			}
 
-		break;
-	case ARRAY_CUSTOM_RG_FLOAT:
-		floats = arrays[type];
-		DEV_ASSERT(floats.size() % 2 == 0);
+			break;
+		case ARRAY_CUSTOM_RG_FLOAT:
+			floats = arrays[type];
+			DEV_ASSERT(floats.size() % 2 == 0);
 
-		for (I i = 0; i < floats.size(); i += 2) {
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = floats[i + 0];
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = floats[i + 1];
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = 0;
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = 0;
-			vertex++;
-		}
+			for (I i = 0; i < floats.size(); i += 2) {
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = floats[i + 0];
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = floats[i + 1];
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = 0;
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = 0;
+				vertex++;
+			}
 
-		break;
-	case ARRAY_CUSTOM_RGB_FLOAT:
-		floats = arrays[type];
-		DEV_ASSERT(floats.size() % 3 == 0);
+			break;
+		case ARRAY_CUSTOM_RGB_FLOAT:
+			floats = arrays[type];
+			DEV_ASSERT(floats.size() % 3 == 0);
 
-		for (I i = 0; i < floats.size(); i += 3) {
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = floats[i + 0];
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = floats[i + 1];
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = floats[i + 2];
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = 0;
-			vertex++;
-		}
+			for (I i = 0; i < floats.size(); i += 3) {
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = floats[i + 0];
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = floats[i + 1];
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = floats[i + 2];
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = 0;
+				vertex++;
+			}
 
-		break;
-	case ARRAY_CUSTOM_RGBA_FLOAT:
-		floats = arrays[type];
-		DEV_ASSERT(floats.size() % 4 == 0);
+			break;
+		case ARRAY_CUSTOM_RGBA_FLOAT:
+			floats = arrays[type];
+			DEV_ASSERT(floats.size() % 4 == 0);
 
-		for (I i = 0; i < floats.size(); i += 4) {
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = floats[i + 0];
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = floats[i + 1];
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = floats[i + 2];
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = floats[i + 3];
-			vertex++;
-		}
+			for (I i = 0; i < floats.size(); i += 4) {
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = floats[i + 0];
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = floats[i + 1];
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = floats[i + 2];
+				_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = floats[i + 3];
+				vertex++;
+			}
 
-		break;
-	case ARRAY_CUSTOM_MAX:
-		break;
+			break;
+		case ARRAY_CUSTOM_MAX:
+			break;
 	}
 }
 
@@ -1583,9 +1568,9 @@ Ref<ManifoldMesh> ManifoldMesh::_halfspace(const Plane &p_plane, const Ref<Mater
 	// copied from manifold.cpp
 	manifold::Box bBox = _inner->_manifold.BoundingBox();
 	manifold::vec3 normal = manifold::la::normalize(to_vec3(p_plane.normal));
-	manifold::Manifold cutter = manifold::Manifold::Cube(manifold::vec3(2.0), true).Translate({1.0, 0.0, 0.0});
+	manifold::Manifold cutter = manifold::Manifold::Cube(manifold::vec3(2.0), true).Translate({ 1.0, 0.0, 0.0 });
 	double size = manifold::la::length(bBox.Center() - normal * double(p_plane.d)) + 0.5 * manifold::la::length(bBox.Size());
-	cutter = cutter.Scale(manifold::vec3(size)).Translate({p_plane.d, 0.0, 0.0});
+	cutter = cutter.Scale(manifold::vec3(size)).Translate({ p_plane.d, 0.0, 0.0 });
 	double yDeg = manifold::degrees(-std::asin(normal.z));
 	double zDeg = manifold::degrees(std::atan2(normal.y, normal.x));
 	cutter = cutter.Rotate(0.0, yDeg, zDeg);

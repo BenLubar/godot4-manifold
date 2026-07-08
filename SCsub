@@ -10,17 +10,19 @@ env_manifold = env.Clone()
 env_manifold.Append(CPPPATH=["manifold/include/", "clipper2/CPP/Clipper2Lib/include/", "polypartition/src/"])
 
 # tell manifold we want to run operations in series
-env_manifold.Append(CPPDEFINES=[("MANIFOLD_PAR", "-1")])
+env_manifold.Append(CPPDEFINES=[("MANIFOLD_PAR", "-1"), ("MANIFOLD_NO_IOSTREAM", "1")])
 
 sources = [
-	"manifold/src/boolean3.cpp",
 	"manifold/src/boolean_result.cpp",
+	"manifold/src/boolean3.cpp",
 	"manifold/src/constructors.cpp",
 	"manifold/src/csg_tree.cpp",
 	"manifold/src/edge_op.cpp",
+	"manifold/src/execution_impl.cpp",
 	"manifold/src/face_op.cpp",
 	"manifold/src/impl.cpp",
 	"manifold/src/manifold.cpp",
+	"manifold/src/minkowski.cpp",
 	"manifold/src/polygon.cpp",
 	"manifold/src/properties.cpp",
 	"manifold/src/quickhull.cpp",
@@ -29,6 +31,7 @@ sources = [
 	"manifold/src/sort.cpp",
 	"manifold/src/subdivision.cpp",
 	"manifold/src/tree2d.cpp",
+
 	"manifold/src/cross_section/cross_section.cpp",
 
 	"clipper2/CPP/Clipper2Lib/src/clipper.engine.cpp",
