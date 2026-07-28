@@ -733,19 +733,19 @@ Ref<ManifoldMesh> ManifoldMesh::revolve(const TypedArray<PackedVector2Array> &p_
 	return _primitive(manifold::Manifold::Revolve(to_polygons(p_cross_section), p_circular_segments, p_revolve_degrees), p_material, "revolve");
 }
 
-size_t ManifoldMesh::get_vertex_count() const {
+uint64_t ManifoldMesh::get_vertex_count() const {
 	_ensure_manifold();
 	return _inner->_manifold.NumVert();
 }
-size_t ManifoldMesh::get_edge_count() const {
+uint64_t ManifoldMesh::get_edge_count() const {
 	_ensure_manifold();
 	return _inner->_manifold.NumEdge();
 }
-size_t ManifoldMesh::get_triangle_count() const {
+uint64_t ManifoldMesh::get_triangle_count() const {
 	_ensure_manifold();
 	return _inner->_manifold.NumTri();
 }
-size_t ManifoldMesh::get_property_vertex_count() const {
+uint64_t ManifoldMesh::get_property_vertex_count() const {
 	_ensure_manifold();
 	return _inner->_manifold.NumPropVert();
 }

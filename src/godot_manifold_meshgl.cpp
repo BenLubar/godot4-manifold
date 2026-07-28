@@ -1,5 +1,5 @@
-#include "godot_manifold_defs.h"
 #include "godot_manifold_converters.h"
+#include "godot_manifold_defs.h"
 
 #include <godot_cpp/core/class_db.hpp>
 
@@ -170,23 +170,23 @@ void ManifoldMesh64::set_num_prop(uint64_t p_num_prop) {
 	emit_changed();
 }
 
-#define WRAP_VECTOR(m_class, m_array, m_name, m_struct_name, m_size_multiple) \
-	m_array m_class::get_##m_name() const { \
-		m_array a; \
-		static_assert(sizeof(a[0]) == sizeof(_inner->_meshgl.m_struct_name[0])); \
-		a.resize(_inner->_meshgl.m_struct_name.size()); \
-		std::copy(_inner->_meshgl.m_struct_name.begin(), _inner->_meshgl.m_struct_name.end(), a.ptrw()); \
-		return a; \
-	} \
-	void m_class::set_##m_name(const m_array &p_##m_name) { \
-		if (unlikely(p_##m_name.size() % m_size_multiple != 0)) { \
-			WARN_PRINT(#m_name " must be a multiple of " #m_size_multiple " entries in length"); \
-		} \
-		_inner->_meshgl.m_struct_name.resize(p_##m_name.size()); \
-		std::copy(p_##m_name.begin(), p_##m_name.end(), _inner->_meshgl.m_struct_name.begin()); \
-		emit_changed(); \
+#define WRAP_VECTOR(m_class, m_array, m_name, m_struct_name, m_size_multiple)                                        \
+	m_array m_class::get_##m_name() const {                                                                          \
+		m_array a;                                                                                                   \
+		static_assert(sizeof(a[0]) == sizeof(_inner->_meshgl.m_struct_name[0]));                                     \
+		a.resize(_inner->_meshgl.m_struct_name.size());                                                              \
+		memcpy(a.ptrw(), _inner->_meshgl.m_struct_name.data(), _inner->_meshgl.m_struct_name.size() * sizeof(a[0])); \
+		return a;                                                                                                    \
+	}                                                                                                                \
+	void m_class::set_##m_name(const m_array &p_##m_name) {                                                          \
+		if (unlikely(p_##m_name.size() % m_size_multiple != 0)) {                                                    \
+			WARN_PRINT(#m_name " must be a multiple of " #m_size_multiple " entries in length");                     \
+		}                                                                                                            \
+		_inner->_meshgl.m_struct_name.resize(p_##m_name.size());                                                     \
+		memcpy(_inner->_meshgl.m_struct_name.data(), p_##m_name.ptr(), p_##m_name.size() * sizeof(p_##m_name[0]));   \
+		emit_changed();                                                                                              \
 	}
-#define WRAP_VECTOR_SIZE(m_type, m_name, m_struct_name, m_size_multiple) \
+#define WRAP_VECTOR_SIZE(m_type, m_name, m_struct_name, m_size_multiple)                         \
 	WRAP_VECTOR(ManifoldMesh32, Packed##m_type##32Array, m_name, m_struct_name, m_size_multiple) \
 	WRAP_VECTOR(ManifoldMesh64, Packed##m_type##64Array, m_name, m_struct_name, m_size_multiple)
 
@@ -236,8 +236,8 @@ Ref<Manifold> ManifoldMesh32::to_manifold() const {
 }
 Ref<Manifold> ManifoldMesh32::to_manifold_with_original_id(uint32_t p_original_id) const {
 	manifold::MeshGL mesh = _inner->_meshgl;
-	mesh.runIndex = {0};
-	mesh.runOriginalID = {p_original_id};
+	mesh.runIndex = { 0 };
+	mesh.runOriginalID = { p_original_id };
 	mesh.runTransform = {};
 	return memnew(Manifold(manifold::Manifold(mesh)));
 }
@@ -246,8 +246,8 @@ Ref<Manifold> ManifoldMesh64::to_manifold() const {
 }
 Ref<Manifold> ManifoldMesh64::to_manifold_with_original_id(uint32_t p_original_id) const {
 	manifold::MeshGL64 mesh = _inner->_meshgl;
-	mesh.runIndex = {0};
-	mesh.runOriginalID = {p_original_id};
+	mesh.runIndex = { 0 };
+	mesh.runOriginalID = { p_original_id };
 	mesh.runTransform = {};
 	return memnew(Manifold(manifold::Manifold(mesh)));
 }

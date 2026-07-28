@@ -1,5 +1,5 @@
-#include "godot_manifold_defs.h"
 #include "godot_manifold_converters.h"
+#include "godot_manifold_defs.h"
 
 #include <godot_cpp/core/class_db.hpp>
 
@@ -234,10 +234,10 @@ Ref<CrossSection> CrossSection::circle(double p_radius, int32_t p_circular_segme
 bool CrossSection::is_empty() const {
 	return _inner->_cross_section.IsEmpty();
 }
-size_t CrossSection::get_vertex_count() const {
+uint64_t CrossSection::get_vertex_count() const {
 	return _inner->_cross_section.NumVert();
 }
-size_t CrossSection::get_contour_count() const {
+uint64_t CrossSection::get_contour_count() const {
 	return _inner->_cross_section.NumContour();
 }
 Rect2 CrossSection::get_bounds() const {

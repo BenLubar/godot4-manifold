@@ -58,8 +58,8 @@ public:
 	static godot::Ref<CrossSection> circle(double p_radius, int32_t p_circular_segments = 0);
 
 	bool is_empty() const;
-	size_t get_vertex_count() const;
-	size_t get_contour_count() const;
+	uint64_t get_vertex_count() const;
+	uint64_t get_contour_count() const;
 	godot::Rect2 get_bounds() const;
 	double get_area() const;
 
@@ -393,10 +393,10 @@ public:
 	static godot::Ref<ManifoldMesh> extrude(const godot::TypedArray<godot::PackedVector2Array> &p_cross_section, double p_height, int32_t p_divisions = 0, double p_twist_degrees = 0.0, const godot::Vector2 &p_scale_top = godot::Vector2(1.0f, 1.0f), const godot::Ref<godot::Material> &p_material = nullptr);
 	static godot::Ref<ManifoldMesh> revolve(const godot::TypedArray<godot::PackedVector2Array> &p_cross_section, int32_t p_circular_segments = 0, double p_revolve_degrees = 360.0, const godot::Ref<godot::Material> &p_material = nullptr);
 
-	size_t get_vertex_count() const;
-	size_t get_edge_count() const;
-	size_t get_triangle_count() const;
-	size_t get_property_vertex_count() const;
+	uint64_t get_vertex_count() const;
+	uint64_t get_edge_count() const;
+	uint64_t get_triangle_count() const;
+	uint64_t get_property_vertex_count() const;
 	godot::AABB get_aabb() const;
 
 	int32_t get_genus() const;
