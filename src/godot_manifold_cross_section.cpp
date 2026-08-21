@@ -6,6 +6,7 @@
 #include <godot_cpp/classes/geometry2d.hpp>
 
 #include <manifold/cross_section.h>
+#include <manifold/polygon.h>
 
 #include <polypartition.h>
 
@@ -160,58 +161,34 @@ TypedArray<PackedVector2Array> CrossSection::to_convex_polygons() const {
 }
 
 PackedVector2Array CrossSection::to_triangles() const {
-	const TypedArray<PackedVector2Array> polygons_and_holes = to_polygons();
+	const manifold::Polygons polygons = _inner->_cross_section.ToPolygons();
 
-	PackedVector2Array decomp;
-	TPPLPolyList in_poly, out_poly;
+	uint32_t num_vertices = 0;
+	for (const manifold::SimplePolygon &polygon : polygons) {
+		num_vertices += polygon.size();
+	}
 
-	for (int64_t i = 0; i < polygons_and_holes.size(); i++) {
-		const PackedVector2Array polygon_or_hole = polygons_and_holes[i];
-
-		TPPLPoly inp;
-		inp.Init(polygon_or_hole.size());
-		for (int64_t j = 0; j < polygon_or_hole.size(); j++) {
-			inp[j].x = polygon_or_hole[j].x;
-			inp[j].y = polygon_or_hole[j].y;
+	LocalVector<Vector2> vertices;
+	vertices.reserve(num_vertices);
+	for (const manifold::SimplePolygon &polygon : polygons) {
+		for (const manifold::vec2 &v : polygon) {
+			vertices.push_back(from_vec2(v));
 		}
-
-		if (Geometry2D::get_singleton()->is_polygon_clockwise(polygon_or_hole)) {
-			inp.SetOrientation(TPPL_ORIENTATION_CW);
-			inp.SetHole(true);
-		} else {
-			inp.SetOrientation(TPPL_ORIENTATION_CCW);
-		}
-
-		DEV_ASSERT(inp.Valid());
-
-		in_poly.push_back(inp);
 	}
 
-	TPPLPartition tpart;
-	if (tpart.Triangulate_EC(&in_poly, &out_poly) == 0) {
-		ERR_PRINT("Triangulation failed!");
-		return decomp;
+	const std::vector<manifold::ivec3> indices = manifold::Triangulate(polygons);
+	PackedVector2Array triangles;
+	triangles.resize(indices.size() * 3);
+
+	int64_t i = 0;
+	for (const manifold::ivec3 &index : indices) {
+		triangles[i] = vertices[index.x];
+		triangles[i + 1] = vertices[index.y];
+		triangles[i + 2] = vertices[index.z];
+		i += 3;
 	}
 
-	decomp.resize(out_poly.size() * 3);
-	int idx = 0;
-	for (const TPPLPoly &tp : out_poly) {
-		DEV_ASSERT(tp.GetNumPoints() == 3);
-
-		decomp[idx].x = static_cast<real_t>(tp.GetPoint(0).x);
-		decomp[idx].y = static_cast<real_t>(tp.GetPoint(0).y);
-		idx++;
-
-		decomp[idx].x = static_cast<real_t>(tp.GetPoint(1).x);
-		decomp[idx].y = static_cast<real_t>(tp.GetPoint(1).y);
-		idx++;
-
-		decomp[idx].x = static_cast<real_t>(tp.GetPoint(2).x);
-		decomp[idx].y = static_cast<real_t>(tp.GetPoint(2).y);
-		idx++;
-	}
-
-	return decomp;
+	return triangles;
 }
 
 Ref<CrossSection> CrossSection::compose(const TypedArray<CrossSection> &p_cross_sections) {
