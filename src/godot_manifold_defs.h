@@ -81,6 +81,9 @@ public:
 	static godot::Ref<CrossSection> batch_difference(const godot::TypedArray<CrossSection> &p_cross_sections);
 
 	godot::Ref<CrossSection> hull() const;
+	static godot::Ref<CrossSection> from_simple_hull(const godot::PackedVector2Array &p_simple_polygon);
+	static godot::Ref<CrossSection> from_complex_hull(const godot::TypedArray<godot::PackedVector2Array> &p_polygons);
+	static godot::Ref<CrossSection> from_combined_hull(const godot::TypedArray<CrossSection> &p_cross_sections);
 
 private:
 	struct Inner;

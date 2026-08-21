@@ -65,6 +65,9 @@ void CrossSection::_bind_methods() {
 	ClassDB::bind_static_method(get_class_static(), D_METHOD("batch_difference", "cross_sections"), &CrossSection::batch_difference);
 
 	ClassDB::bind_method(D_METHOD("hull"), &CrossSection::hull);
+	ClassDB::bind_static_method(get_class_static(), D_METHOD("from_simple_hull", "simple_polygon"), &CrossSection::from_simple_hull);
+	ClassDB::bind_static_method(get_class_static(), D_METHOD("from_complex_hull", "polygons"), &CrossSection::from_complex_hull);
+	ClassDB::bind_static_method(get_class_static(), D_METHOD("from_combined_hull", "cross_sections"), &CrossSection::from_combined_hull);
 }
 
 struct CrossSection::Inner {
@@ -310,4 +313,20 @@ Ref<CrossSection> CrossSection::batch_difference(const TypedArray<CrossSection> 
 
 Ref<CrossSection> CrossSection::hull() const {
 	return memnew(CrossSection(_inner->_cross_section.Hull()));
+}
+Ref<CrossSection> CrossSection::from_simple_hull(const PackedVector2Array &p_simple_polygon) {
+	return memnew(CrossSection(manifold::CrossSection::Hull(::to_simple_polygon(p_simple_polygon))));
+}
+Ref<CrossSection> CrossSection::from_complex_hull(const TypedArray<PackedVector2Array> &p_polygons) {
+	return memnew(CrossSection(manifold::CrossSection::Hull(::to_polygons(p_polygons))));
+}
+Ref<CrossSection> CrossSection::from_combined_hull(const TypedArray<CrossSection> &p_cross_sections) {
+	std::vector<manifold::CrossSection> sections;
+	sections.resize(p_cross_sections.size());
+	for (size_t i = 0; i < sections.size(); i++) {
+		const Ref<CrossSection> section = p_cross_sections[i];
+		ERR_FAIL_COND_V(section.is_null(), nullptr);
+		sections[i] = section->_inner->_cross_section;
+	}
+	return memnew(CrossSection(manifold::CrossSection::Hull(sections)));
 }

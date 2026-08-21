@@ -49,6 +49,18 @@
 			<description>
 			</description>
 		</method>
+		<method name="from_combined_hull" qualifiers="static">
+			<return type="CrossSection" />
+			<param index="0" name="cross_sections" type="CrossSection[]" />
+			<description>
+			</description>
+		</method>
+		<method name="from_complex_hull" qualifiers="static">
+			<return type="CrossSection" />
+			<param index="0" name="polygons" type="PackedVector2Array[]" />
+			<description>
+			</description>
+		</method>
 		<method name="from_polygons" qualifiers="static">
 			<return type="CrossSection" />
 			<param index="0" name="polygons" type="PackedVector2Array[]" />
@@ -59,6 +71,12 @@
 		<method name="from_rect" qualifiers="static">
 			<return type="CrossSection" />
 			<param index="0" name="rect" type="Rect2" />
+			<description>
+			</description>
+		</method>
+		<method name="from_simple_hull" qualifiers="static">
+			<return type="CrossSection" />
+			<param index="0" name="simple_polygon" type="PackedVector2Array" />
 			<description>
 			</description>
 		</method>
