@@ -36,23 +36,7 @@ static _FORCE_INLINE_ manifold::mat2x3 to_mat2x3(const godot::Transform2D &p_tra
 	return { to_vec2(p_transform.columns[0]), to_vec2(p_transform.columns[1]), to_vec2(p_transform.columns[2]) };
 }
 static _FORCE_INLINE_ manifold::mat3 to_mat3(const godot::Basis &p_basis) {
-	return {
-		{
-				static_cast<godot::real_t>(p_basis.rows[0].x),
-				static_cast<godot::real_t>(p_basis.rows[1].x),
-				static_cast<godot::real_t>(p_basis.rows[2].x),
-		},
-		{
-				static_cast<godot::real_t>(p_basis.rows[0].y),
-				static_cast<godot::real_t>(p_basis.rows[1].y),
-				static_cast<godot::real_t>(p_basis.rows[2].y),
-		},
-		{
-				static_cast<godot::real_t>(p_basis.rows[0].z),
-				static_cast<godot::real_t>(p_basis.rows[1].z),
-				static_cast<godot::real_t>(p_basis.rows[2].z),
-		},
-	};
+	return { to_vec3(p_basis.rows[0]), to_vec3(p_basis.rows[1]), to_vec3(p_basis.rows[2]) };
 }
 static _FORCE_INLINE_ manifold::mat3x4 to_mat3x4(const godot::Transform3D &p_transform) {
 	return { to_mat3(p_transform.basis), to_vec3(p_transform.origin) };
