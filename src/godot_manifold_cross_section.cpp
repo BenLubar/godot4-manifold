@@ -141,6 +141,14 @@ TypedArray<PackedVector2Array> CrossSection::to_convex_polygons() const {
 	TPPLPartition tpart;
 	if (tpart.ConvexPartition_HM(&in_poly, &out_poly) == 0) {
 		ERR_PRINT("Convex decomposing failed!");
+
+		// triangulate so we have *some* valid result
+		const PackedVector2Array tris = to_triangles();
+		decomp.resize(tris.size() / 3);
+		for (int64_t i = 0; i < decomp.size(); i++) {
+			decomp[i] = tris.slice(i * 3, i * 3 + 3);
+		}
+
 		return decomp;
 	}
 
