@@ -51,6 +51,7 @@ public:
 	godot::TypedArray<godot::PackedVector2Array> to_polygons() const;
 	godot::TypedArray<godot::PackedVector2Array> to_convex_polygons() const;
 	godot::PackedVector2Array to_triangles() const;
+	godot::PackedVector2Array to_triangles_with_vertices_from(const godot::TypedArray<CrossSection> &p_others) const;
 
 	godot::TypedArray<CrossSection> decompose() const;
 	static godot::Ref<CrossSection> compose(const godot::TypedArray<CrossSection> &p_cross_sections);

@@ -35,6 +35,7 @@ void CrossSection::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("to_polygons"), &CrossSection::to_polygons);
 	ClassDB::bind_method(D_METHOD("to_convex_polygons"), &CrossSection::to_convex_polygons);
 	ClassDB::bind_method(D_METHOD("to_triangles"), &CrossSection::to_triangles);
+	ClassDB::bind_method(D_METHOD("to_triangles_with_vertices_from", "others"), &CrossSection::to_triangles_with_vertices_from);
 
 	ClassDB::bind_method(D_METHOD("decompose"), &CrossSection::decompose);
 	ClassDB::bind_static_method(get_class_static(), D_METHOD("compose", "cross_sections"), &CrossSection::compose);
@@ -173,6 +174,105 @@ TypedArray<PackedVector2Array> CrossSection::to_convex_polygons() const {
 
 PackedVector2Array CrossSection::to_triangles() const {
 	const manifold::Polygons polygons = _inner->_cross_section.ToPolygons();
+
+	uint32_t num_vertices = 0;
+	for (const manifold::SimplePolygon &polygon : polygons) {
+		num_vertices += polygon.size();
+	}
+
+	LocalVector<Vector2> vertices;
+	vertices.reserve(num_vertices);
+	for (const manifold::SimplePolygon &polygon : polygons) {
+		for (const manifold::vec2 &v : polygon) {
+			vertices.push_back(from_vec2(v));
+		}
+	}
+
+	const std::vector<manifold::ivec3> indices = manifold::Triangulate(polygons);
+	PackedVector2Array triangles;
+	triangles.resize(indices.size() * 3);
+
+	int64_t i = 0;
+	for (const manifold::ivec3 &index : indices) {
+		triangles[i] = vertices[index.x];
+		triangles[i + 1] = vertices[index.y];
+		triangles[i + 2] = vertices[index.z];
+		i += 3;
+	}
+
+	return triangles;
+}
+
+static void add_vertices_between(manifold::SimplePolygon &r_polygon, size_t p_end, manifold::vec2 p_start, const manifold::Polygons &p_other) {
+	const Vector2 start = from_vec2(p_start);
+	const Vector2 end = from_vec2(r_polygon.at(p_end));
+	const Vector2 diff = end - start;
+
+	p_end++;
+
+	LocalVector<Vector2> matches;
+	for (const manifold::SimplePolygon &others : p_other) {
+		for (const manifold::vec2 &other : others) {
+			const Vector2 o = from_vec2(other);
+			if (Math::is_zero_approx(diff.cross(o - start))) {
+				matches.ordered_insert(o);
+			}
+		}
+	}
+
+	if (start < end) {
+		Vector2 prev = start;
+		for (const Vector2 &m : matches) {
+			if (m < start || m.is_equal_approx(prev)) {
+				continue;
+			}
+
+			prev = m;
+
+			if (m > end || m.is_equal_approx(end)) {
+				break;
+			}
+
+			r_polygon.insert(r_polygon.begin() + p_end, to_vec2(m));
+			p_end++;
+		}
+	} else {
+		Vector2 prev = end;
+		for (const Vector2 &m : matches) {
+			if (m < end || m.is_equal_approx(prev)) {
+				continue;
+			}
+
+			prev = m;
+
+			if (m > start || m.is_equal_approx(start)) {
+				break;
+			}
+
+			r_polygon.insert(r_polygon.begin() + p_end, to_vec2(m));
+		}
+	}
+}
+
+static void add_vertices_from(manifold::SimplePolygon &r_polygon, const manifold::Polygons &p_other) {
+	add_vertices_between(r_polygon, r_polygon.size() - 1, r_polygon.front(), p_other);
+	for (size_t i = r_polygon.size(); i >= 2; i--) {
+		add_vertices_between(r_polygon, i - 2, r_polygon.at(i - 1), p_other);
+	}
+}
+
+static void add_vertices_from(manifold::Polygons &r_polygons, const manifold::Polygons &p_other) {
+	for (manifold::SimplePolygon &polygon : r_polygons) {
+		add_vertices_from(polygon, p_other);
+	}
+}
+
+PackedVector2Array CrossSection::to_triangles_with_vertices_from(const TypedArray<CrossSection> &p_others) const {
+	manifold::Polygons polygons = _inner->_cross_section.ToPolygons();
+	for (const Ref<CrossSection> other : p_others) {
+		ERR_CONTINUE(other.is_null());
+		add_vertices_from(polygons, other->_inner->_cross_section.ToPolygons());
+	}
 
 	uint32_t num_vertices = 0;
 	for (const manifold::SimplePolygon &polygon : polygons) {
