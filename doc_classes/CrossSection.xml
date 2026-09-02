@@ -178,6 +178,12 @@
 			<description>
 			</description>
 		</method>
+		<method name="to_triangles_with_vertices_from" qualifiers="const">
+			<return type="PackedVector2Array" />
+			<param index="0" name="others" type="CrossSection[]" />
+			<description>
+			</description>
+		</method>
 		<method name="transform" qualifiers="const">
 			<return type="CrossSection" />
 			<param index="0" name="transform" type="Transform2D" />

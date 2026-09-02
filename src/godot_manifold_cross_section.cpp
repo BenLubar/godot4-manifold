@@ -205,10 +205,8 @@ PackedVector2Array CrossSection::to_triangles() const {
 
 static void add_vertices_between(manifold::SimplePolygon &r_polygon, size_t p_end, manifold::vec2 p_start, const manifold::Polygons &p_other) {
 	const Vector2 start = from_vec2(p_start);
-	const Vector2 end = from_vec2(r_polygon.at(p_end));
+	const Vector2 end = from_vec2(r_polygon.at(p_end - 1));
 	const Vector2 diff = end - start;
-
-	p_end++;
 
 	LocalVector<Vector2> matches;
 	for (const manifold::SimplePolygon &others : p_other) {
@@ -220,23 +218,7 @@ static void add_vertices_between(manifold::SimplePolygon &r_polygon, size_t p_en
 		}
 	}
 
-	if (start < end) {
-		Vector2 prev = start;
-		for (const Vector2 &m : matches) {
-			if (m < start || m.is_equal_approx(prev)) {
-				continue;
-			}
-
-			prev = m;
-
-			if (m > end || m.is_equal_approx(end)) {
-				break;
-			}
-
-			r_polygon.insert(r_polygon.begin() + p_end, to_vec2(m));
-			p_end++;
-		}
-	} else {
+	if (start > end) {
 		Vector2 prev = end;
 		for (const Vector2 &m : matches) {
 			if (m < end || m.is_equal_approx(prev)) {
@@ -250,14 +232,30 @@ static void add_vertices_between(manifold::SimplePolygon &r_polygon, size_t p_en
 			}
 
 			r_polygon.insert(r_polygon.begin() + p_end, to_vec2(m));
+			p_end++;
+		}
+	} else {
+		Vector2 prev = start;
+		for (const Vector2 &m : matches) {
+			if (m < start || m.is_equal_approx(prev)) {
+				continue;
+			}
+
+			prev = m;
+
+			if (m > end || m.is_equal_approx(end)) {
+				break;
+			}
+
+			r_polygon.insert(r_polygon.begin() + p_end, to_vec2(m));
 		}
 	}
 }
 
 static void add_vertices_from(manifold::SimplePolygon &r_polygon, const manifold::Polygons &p_other) {
-	add_vertices_between(r_polygon, r_polygon.size() - 1, r_polygon.front(), p_other);
-	for (size_t i = r_polygon.size(); i >= 2; i--) {
-		add_vertices_between(r_polygon, i - 2, r_polygon.at(i - 1), p_other);
+	add_vertices_between(r_polygon, r_polygon.size(), r_polygon.front(), p_other);
+	for (size_t i = r_polygon.size() - 1; i > 0; i--) {
+		add_vertices_between(r_polygon, i, r_polygon.at(i), p_other);
 	}
 }
 
