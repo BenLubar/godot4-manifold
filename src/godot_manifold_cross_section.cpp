@@ -13,24 +13,18 @@
 using namespace godot;
 
 void CrossSection::_bind_methods() {
-	static_assert(EVEN_ODD == int(manifold::CrossSection::FillRule::EvenOdd));
-	BIND_ENUM_CONSTANT(EVEN_ODD);
-	static_assert(NON_ZERO == int(manifold::CrossSection::FillRule::NonZero));
-	BIND_ENUM_CONSTANT(NON_ZERO);
-	static_assert(POSITIVE == int(manifold::CrossSection::FillRule::Positive));
-	BIND_ENUM_CONSTANT(POSITIVE);
-	static_assert(NEGATIVE == int(manifold::CrossSection::FillRule::Negative));
-	BIND_ENUM_CONSTANT(NEGATIVE);
-
 	static_assert(SQUARE == int(manifold::CrossSection::JoinType::Square));
 	BIND_ENUM_CONSTANT(SQUARE);
 	static_assert(ROUND == int(manifold::CrossSection::JoinType::Round));
 	BIND_ENUM_CONSTANT(ROUND);
 	static_assert(MITER == int(manifold::CrossSection::JoinType::Miter));
 	BIND_ENUM_CONSTANT(MITER);
+	static_assert(BEVEL == int(manifold::CrossSection::JoinType::Bevel));
+	BIND_ENUM_CONSTANT(BEVEL);
 
-	ClassDB::bind_static_method(get_class_static(), D_METHOD("from_simple_polygon", "simple_polygon", "fill_rule"), &CrossSection::from_simple_polygon, DEFVAL(POSITIVE));
-	ClassDB::bind_static_method(get_class_static(), D_METHOD("from_polygons", "polygons", "fill_rule"), &CrossSection::from_polygons, DEFVAL(POSITIVE));
+	ClassDB::bind_static_method(get_class_static(), D_METHOD("from_simple_polygon", "simple_polygon"), &CrossSection::from_simple_polygon);
+	ClassDB::bind_static_method(get_class_static(), D_METHOD("from_polygons", "polygons"), &CrossSection::from_polygons);
+	ClassDB::bind_static_method(get_class_static(), D_METHOD("from_even_odd", "polygons"), &CrossSection::from_even_odd);
 	ClassDB::bind_static_method(get_class_static(), D_METHOD("from_rect", "rect"), &CrossSection::from_rect);
 	ClassDB::bind_method(D_METHOD("to_polygons"), &CrossSection::to_polygons);
 	ClassDB::bind_method(D_METHOD("to_convex_polygons"), &CrossSection::to_convex_polygons);
@@ -38,7 +32,6 @@ void CrossSection::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("to_triangles_with_vertices_from", "others"), &CrossSection::to_triangles_with_vertices_from);
 
 	ClassDB::bind_method(D_METHOD("decompose"), &CrossSection::decompose);
-	ClassDB::bind_static_method(get_class_static(), D_METHOD("compose", "cross_sections"), &CrossSection::compose);
 	ClassDB::bind_static_method(get_class_static(), D_METHOD("square", "dimensions", "center"), &CrossSection::square, DEFVAL(false));
 	ClassDB::bind_static_method(get_class_static(), D_METHOD("circle", "radius", "circular_segments"), &CrossSection::circle, DEFVAL(0));
 
@@ -87,11 +80,14 @@ CrossSection::~CrossSection() {
 	_inner = nullptr;
 }
 
-Ref<CrossSection> CrossSection::from_simple_polygon(const PackedVector2Array &p_simple_polygon, FillRule p_fill_rule) {
-	return memnew(CrossSection(manifold::CrossSection(to_simple_polygon(p_simple_polygon), manifold::CrossSection::FillRule(p_fill_rule))));
+Ref<CrossSection> CrossSection::from_simple_polygon(const PackedVector2Array &p_simple_polygon) {
+	return memnew(CrossSection(manifold::CrossSection(to_simple_polygon(p_simple_polygon))));
 }
-Ref<CrossSection> CrossSection::from_polygons(const TypedArray<PackedVector2Array> &p_polygons, FillRule p_fill_rule) {
-	return memnew(CrossSection(manifold::CrossSection(::to_polygons(p_polygons), manifold::CrossSection::FillRule(p_fill_rule))));
+Ref<CrossSection> CrossSection::from_polygons(const TypedArray<PackedVector2Array> &p_polygons) {
+	return memnew(CrossSection(manifold::CrossSection(::to_polygons(p_polygons))));
+}
+Ref<CrossSection> CrossSection::from_even_odd(const TypedArray<PackedVector2Array> &p_polygons) {
+	return memnew(CrossSection(manifold::CrossSection::EvenOdd(::to_polygons(p_polygons))));
 }
 Ref<CrossSection> CrossSection::from_rect(const Rect2 &p_rect) {
 	return memnew(CrossSection(manifold::CrossSection(to_rect(p_rect))));
@@ -300,16 +296,6 @@ PackedVector2Array CrossSection::to_triangles_with_vertices_from(const TypedArra
 	return triangles;
 }
 
-Ref<CrossSection> CrossSection::compose(const TypedArray<CrossSection> &p_cross_sections) {
-	std::vector<manifold::CrossSection> sections;
-	sections.resize(p_cross_sections.size());
-	for (size_t i = 0; i < sections.size(); i++) {
-		const Ref<CrossSection> section = p_cross_sections[i];
-		ERR_FAIL_COND_V(section.is_null(), nullptr);
-		sections[i] = section->_inner->_cross_section;
-	}
-	return memnew(CrossSection(manifold::CrossSection::Compose(sections)));
-}
 Ref<CrossSection> CrossSection::square(const Vector2 &p_dimensions, bool p_center) {
 	return memnew(CrossSection(manifold::CrossSection::Square(to_vec2(p_dimensions), p_center)));
 }

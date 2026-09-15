@@ -36,6 +36,8 @@ void Manifold::_bind_methods() {
 	BIND_ENUM_CONSTANT(ERROR_FACE_ID_WRONG_LENGTH);
 	BIND_ENUM_CONSTANT(ERROR_INVALID_CONSTRUCTION);
 	BIND_ENUM_CONSTANT(ERROR_RESULT_TOO_LARGE);
+	BIND_ENUM_CONSTANT(ERROR_INVALID_TANGENTS);
+	BIND_ENUM_CONSTANT(ERROR_CANCELLED);
 
 	ClassDB::bind_method(D_METHOD("status"), &Manifold::status);
 	ClassDB::bind_method(D_METHOD("is_empty"), &Manifold::is_empty);
@@ -52,8 +54,11 @@ void Manifold::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("volume"), &Manifold::volume);
 	ClassDB::bind_method(D_METHOD("min_gap", "other", "search_length"), &Manifold::min_gap);
 
+	ClassDB::bind_method(D_METHOD("ray_cast", "origin", "endpoint"), &Manifold::ray_cast_bind);
+	ClassDB::bind_method(D_METHOD("winding_number", "points"), &Manifold::winding_number);
+
 	ClassDB::bind_method(D_METHOD("original_id"), &Manifold::original_id);
-	ClassDB::bind_method(D_METHOD("as_original"), &Manifold::as_original);
+	ClassDB::bind_method(D_METHOD("as_original", "original_id"), &Manifold::as_original, DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("merge_runs"), &Manifold::merge_runs);
 	ClassDB::bind_static_method(get_class_static(), D_METHOD("reserve_ids", "count"), &Manifold::reserve_ids);
 
@@ -65,6 +70,7 @@ void Manifold::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("warp", "func"), &Manifold::warp_bind);
 	ClassDB::bind_method(D_METHOD("set_tolerance", "tolerance"), &Manifold::set_tolerance);
 	ClassDB::bind_method(D_METHOD("simplify", "tolerance"), &Manifold::simplify, DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("remove_degenerates"), &Manifold::remove_degenerates);
 
 	ClassDB::bind_method(D_METHOD("union_with", "second"), &Manifold::union_with);
 	ClassDB::bind_static_method(get_class_static(), D_METHOD("union_batch", "manifolds"), &Manifold::union_batch);
@@ -75,6 +81,8 @@ void Manifold::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("split", "manifold"), &Manifold::split_bind);
 	ClassDB::bind_method(D_METHOD("split_by_plane", "plane"), &Manifold::split_by_plane_bind);
 	ClassDB::bind_method(D_METHOD("trim_by_plane", "plane"), &Manifold::trim_by_plane);
+	ClassDB::bind_method(D_METHOD("minkowski_sum", "second"), &Manifold::minkowski_sum);
+	ClassDB::bind_method(D_METHOD("minkowski_difference", "second"), &Manifold::minkowski_difference);
 
 	ClassDB::bind_method(D_METHOD("set_properties", "num_prop", "prop_func"), &Manifold::set_properties_bind);
 	ClassDB::bind_method(D_METHOD("calculate_curvature", "gaussian_idx", "mean_idx"), &Manifold::calculate_curvature);
@@ -84,7 +92,6 @@ void Manifold::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("refine_to_length", "length"), &Manifold::refine_to_length);
 	ClassDB::bind_method(D_METHOD("refine_to_tolerance", "tolerance"), &Manifold::refine_to_tolerance);
 	ClassDB::bind_method(D_METHOD("smooth_by_normals", "normal_idx"), &Manifold::smooth_by_normals);
-	ClassDB::bind_method(D_METHOD("smooth_out", "min_sharp_angle", "min_smoothness"), &Manifold::smooth_out, DEFVAL(52.5), DEFVAL(0));
 
 	ClassDB::bind_method(D_METHOD("hull"), &Manifold::hull);
 	ClassDB::bind_static_method(get_class_static(), D_METHOD("hull_batch", "manifolds"), &Manifold::hull_batch);
@@ -216,11 +223,49 @@ double Manifold::min_gap(const Ref<Manifold> &p_other, double p_search_length) c
 	return _inner->_manifold.MinGap(p_other->_inner->_manifold, p_search_length);
 }
 
+void Manifold::ray_cast(LocalVector<RayHit> &r_hits, godot::Vector3 p_origin, godot::Vector3 p_endpoint) const {
+	std::vector<manifold::RayHit> hits = _inner->_manifold.RayCast(to_vec3(p_origin), to_vec3(p_endpoint));
+
+	r_hits.resize_uninitialized(hits.size());
+	for (size_t i = 0; i < hits.size(); i++) {
+		r_hits[i].face = hits[i].faceID;
+		r_hits[i].distance = static_cast<real_t>(hits[i].distance);
+		r_hits[i].position = from_vec3(hits[i].position);
+		r_hits[i].normal = from_vec3(hits[i].normal);
+	}
+}
+TypedArray<Dictionary> Manifold::ray_cast_bind(godot::Vector3 p_origin, godot::Vector3 p_endpoint) const {
+	LocalVector<RayHit> hits;
+	ray_cast(hits, p_origin, p_endpoint);
+
+	TypedArray<Dictionary> hits_bind;
+	hits_bind.resize(hits.size());
+
+	const StringName s_face{ "face" };
+	const StringName s_distance{ "distance" };
+	const StringName s_position{ "position" };
+	const StringName s_normal{ "normal" };
+
+	for (uint32_t i = 0; i < hits.size(); i++) {
+		Dictionary d;
+		d[s_face] = hits[i].face;
+		d[s_distance] = hits[i].distance;
+		d[s_position] = hits[i].position;
+		d[s_normal] = hits[i].normal;
+		hits_bind[i] = d;
+	}
+
+	return hits_bind;
+}
+PackedInt32Array Manifold::winding_number(const PackedVector3Array &p_points) const {
+	return from_int32_array(_inner->_manifold.WindingNumber(to_vec3_array(p_points)));
+}
+
 int Manifold::original_id() const {
 	return _inner->_manifold.OriginalID();
 }
-Ref<Manifold> Manifold::as_original() const {
-	return memnew(Manifold(_inner->_manifold.AsOriginal()));
+Ref<Manifold> Manifold::as_original(int p_original_id) const {
+	return memnew(Manifold(_inner->_manifold.AsOriginal(p_original_id)));
 }
 Ref<Manifold> Manifold::merge_runs() const {
 	manifold::MeshGL64 mesh = _inner->_manifold.GetMeshGL64();
@@ -276,6 +321,9 @@ Ref<Manifold> Manifold::set_tolerance(double p_tolerance) const {
 Ref<Manifold> Manifold::simplify(double p_tolerance) const {
 	return memnew(Manifold(_inner->_manifold.Simplify(p_tolerance)));
 }
+Ref<Manifold> Manifold::remove_degenerates() const {
+	return memnew(Manifold(_inner->_manifold.RemoveDegenerates()));
+}
 
 Ref<Manifold> Manifold::union_with(const Ref<Manifold> &p_second) const {
 	ERR_FAIL_NULL_V(*p_second, const_cast<Manifold *>(this));
@@ -318,6 +366,14 @@ Pair<Ref<Manifold>, Ref<Manifold>> Manifold::split_by_plane(Plane p_plane) const
 Ref<Manifold> Manifold::trim_by_plane(Plane p_plane) const {
 	return memnew(Manifold(_inner->_manifold.TrimByPlane(to_vec3(p_plane.normal), p_plane.d)));
 }
+Ref<Manifold> Manifold::minkowski_sum(const Ref<Manifold> &p_second) const {
+	ERR_FAIL_NULL_V(*p_second, const_cast<Manifold *>(this));
+	return memnew(Manifold(_inner->_manifold.MinkowskiSum(p_second->_inner->_manifold)));
+}
+Ref<Manifold> Manifold::minkowski_difference(const Ref<Manifold> &p_second) const {
+	ERR_FAIL_NULL_V(*p_second, const_cast<Manifold *>(this));
+	return memnew(Manifold(_inner->_manifold.MinkowskiDifference(p_second->_inner->_manifold)));
+}
 
 Ref<Manifold> Manifold::set_properties_bind(int p_num_prop, const Callable &p_prop_func) const {
 	return set_properties(p_num_prop, [p_prop_func](Vector3 p_coord, const PackedFloat64Array &p_old_props) -> PackedFloat64Array {
@@ -353,9 +409,6 @@ Ref<Manifold> Manifold::refine_to_tolerance(double p_tolerance) const {
 }
 Ref<Manifold> Manifold::smooth_by_normals(int p_normal_idx) const {
 	return memnew(Manifold(_inner->_manifold.SmoothByNormals(p_normal_idx)));
-}
-Ref<Manifold> Manifold::smooth_out(double p_min_sharp_angle, double p_min_smoothness) const {
-	return memnew(Manifold(_inner->_manifold.SmoothOut(p_min_sharp_angle, p_min_smoothness)));
 }
 
 Ref<Manifold> Manifold::hull() const {

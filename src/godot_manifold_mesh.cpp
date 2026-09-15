@@ -106,7 +106,6 @@ void ManifoldMesh::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_edge_count"), &ManifoldMesh::get_edge_count);
 	ClassDB::bind_method(D_METHOD("get_triangle_count"), &ManifoldMesh::get_triangle_count);
 	ClassDB::bind_method(D_METHOD("get_property_vertex_count"), &ManifoldMesh::get_property_vertex_count);
-	ClassDB::bind_method(D_METHOD("get_aabb"), &ManifoldMesh::get_aabb);
 
 	ClassDB::bind_method(D_METHOD("get_genus"), &ManifoldMesh::get_genus);
 	ClassDB::bind_method(D_METHOD("get_surface_area"), &ManifoldMesh::get_surface_area);
@@ -748,9 +747,6 @@ uint64_t ManifoldMesh::get_triangle_count() const {
 uint64_t ManifoldMesh::get_property_vertex_count() const {
 	_ensure_manifold();
 	return _inner->_manifold.NumPropVert();
-}
-AABB ManifoldMesh::get_aabb() const {
-	return self_type::_get_aabb();
 }
 
 int32_t ManifoldMesh::get_genus() const {

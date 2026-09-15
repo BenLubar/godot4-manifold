@@ -65,3 +65,27 @@ static _FORCE_INLINE_ manifold::Polygons to_polygons(const godot::TypedArray<god
 	std::transform(p_polygons.begin(), p_polygons.end(), polygons.begin(), &to_simple_polygon);
 	return polygons;
 }
+static _FORCE_INLINE_ godot::PackedVector3Array from_vec3_array(const std::vector<manifold::vec3> &p_array) {
+	godot::PackedVector3Array array;
+	array.resize(p_array.size());
+	std::transform(p_array.cbegin(), p_array.cend(), array.begin(), &from_vec3);
+	return array;
+}
+static _FORCE_INLINE_ std::vector<manifold::vec3> to_vec3_array(const godot::PackedVector3Array &p_array) {
+	std::vector<manifold::vec3> array;
+	array.resize(p_array.size());
+	std::transform(p_array.begin(), p_array.end(), array.begin(), &to_vec3);
+	return array;
+}
+static _FORCE_INLINE_ godot::PackedInt32Array from_int32_array(const std::vector<int> &p_array) {
+	godot::PackedInt32Array array;
+	array.resize(p_array.size());
+	std::copy(p_array.cbegin(), p_array.cend(), array.begin());
+	return array;
+}
+static _FORCE_INLINE_ std::vector<int> to_int32_array(const godot::PackedInt32Array &p_array) {
+	std::vector<int> array;
+	array.resize(p_array.size());
+	std::copy(p_array.begin(), p_array.end(), array.begin());
+	return array;
+}

@@ -6,6 +6,7 @@
 
 #include <godot_cpp/classes/material.hpp>
 #include <godot_cpp/classes/mesh.hpp>
+#include <godot_cpp/templates/local_vector.hpp>
 #include <godot_cpp/templates/pair.hpp>
 
 namespace godot {
@@ -28,25 +29,20 @@ protected:
 	static void _bind_methods();
 
 public:
-	enum FillRule {
-		EVEN_ODD,
-		NON_ZERO,
-		POSITIVE,
-		NEGATIVE,
-	};
-
 	enum JoinType {
 		SQUARE,
 		ROUND,
 		MITER,
+		BEVEL,
 	};
 
 	CrossSection();
 	CrossSection(const manifold::CrossSection &p_cross_section);
 	~CrossSection();
 
-	static godot::Ref<CrossSection> from_simple_polygon(const godot::PackedVector2Array &p_simple_polygon, FillRule p_fill_rule = POSITIVE);
-	static godot::Ref<CrossSection> from_polygons(const godot::TypedArray<godot::PackedVector2Array> &p_polygons, FillRule p_fill_rule = POSITIVE);
+	static godot::Ref<CrossSection> from_simple_polygon(const godot::PackedVector2Array &p_simple_polygon);
+	static godot::Ref<CrossSection> from_polygons(const godot::TypedArray<godot::PackedVector2Array> &p_polygons);
+	static godot::Ref<CrossSection> from_even_odd(const godot::TypedArray<godot::PackedVector2Array> &p_polygons);
 	static godot::Ref<CrossSection> from_rect(const godot::Rect2 &p_rect);
 	godot::TypedArray<godot::PackedVector2Array> to_polygons() const;
 	godot::TypedArray<godot::PackedVector2Array> to_convex_polygons() const;
@@ -54,7 +50,6 @@ public:
 	godot::PackedVector2Array to_triangles_with_vertices_from(const godot::TypedArray<CrossSection> &p_others) const;
 
 	godot::TypedArray<CrossSection> decompose() const;
-	static godot::Ref<CrossSection> compose(const godot::TypedArray<CrossSection> &p_cross_sections);
 	static godot::Ref<CrossSection> square(const godot::Vector2 &p_dimensions, bool p_center = false);
 	static godot::Ref<CrossSection> circle(double p_radius, int32_t p_circular_segments = 0);
 
@@ -90,7 +85,6 @@ private:
 	struct Inner;
 	Inner *_inner;
 };
-VARIANT_ENUM_CAST(CrossSection::FillRule);
 VARIANT_ENUM_CAST(CrossSection::JoinType);
 
 class ManifoldMesh32 : public godot::Resource {
@@ -224,6 +218,8 @@ public:
 		ERROR_FACE_ID_WRONG_LENGTH = 10,
 		ERROR_INVALID_CONSTRUCTION = 11,
 		ERROR_RESULT_TOO_LARGE = 12,
+		ERROR_INVALID_TANGENTS = 13,
+		ERROR_CANCELLED = 14,
 	};
 
 	Error status() const;
@@ -241,8 +237,24 @@ public:
 	double volume() const;
 	double min_gap(const godot::Ref<Manifold> &p_other, double p_search_length) const;
 
+	struct RayHit {
+		/// The triangle index that was hit.
+		uint64_t face{};
+		/// The parametric distance along the ray segment in the closed interval
+		/// [0, 1], where 0 is the origin and 1 is the endpoint. Hits exactly at
+		/// the origin or endpoint are included.
+		godot::real_t distance{};
+		/// The 3D position of the hit point.
+		godot::Vector3 position{};
+		/// The geometric face normal at the hit.
+		godot::Vector3 normal{};
+	};
+	void ray_cast(godot::LocalVector<RayHit> &r_hits, godot::Vector3 p_origin, godot::Vector3 p_endpoint) const;
+	godot::TypedArray<godot::Dictionary> ray_cast_bind(godot::Vector3 p_origin, godot::Vector3 p_endpoint) const;
+	godot::PackedInt32Array winding_number(const godot::PackedVector3Array &p_points) const;
+
 	int original_id() const;
-	godot::Ref<Manifold> as_original() const;
+	godot::Ref<Manifold> as_original(int p_original_id = -1) const;
 	godot::Ref<Manifold> merge_runs() const;
 	static uint32_t reserve_ids(uint32_t p_count);
 
@@ -255,6 +267,7 @@ public:
 	godot::Ref<Manifold> warp_bind(const godot::Callable &p_func) const;
 	godot::Ref<Manifold> set_tolerance(double p_tolerance) const;
 	godot::Ref<Manifold> simplify(double p_tolerance = 0) const;
+	godot::Ref<Manifold> remove_degenerates() const;
 
 	godot::Ref<Manifold> union_with(const godot::Ref<Manifold> &p_second) const;
 	static godot::Ref<Manifold> union_batch(const godot::TypedArray<Manifold> &p_manifolds);
@@ -267,6 +280,8 @@ public:
 	godot::Pair<godot::Ref<Manifold>, godot::Ref<Manifold>> split_by_plane(godot::Plane p_plane) const;
 	godot::TypedArray<Manifold> split_by_plane_bind(godot::Plane p_plane) const;
 	godot::Ref<Manifold> trim_by_plane(godot::Plane p_plane) const;
+	godot::Ref<Manifold> minkowski_sum(const godot::Ref<Manifold> &p_second) const;
+	godot::Ref<Manifold> minkowski_difference(const godot::Ref<Manifold> &p_second) const;
 
 	godot::Ref<Manifold> set_properties(int p_num_prop, const std::function<godot::PackedFloat64Array(godot::Vector3, const godot::PackedFloat64Array &)> &p_prop_func) const;
 	godot::Ref<Manifold> set_properties_bind(int p_num_prop, const godot::Callable &p_prop_func) const;
@@ -277,7 +292,6 @@ public:
 	godot::Ref<Manifold> refine_to_length(double p_length) const;
 	godot::Ref<Manifold> refine_to_tolerance(double p_tolerance) const;
 	godot::Ref<Manifold> smooth_by_normals(int p_normal_idx) const;
-	godot::Ref<Manifold> smooth_out(double p_min_sharp_angle = 52.5, double p_min_smoothness = 0) const;
 
 	godot::Ref<Manifold> hull() const;
 	static godot::Ref<Manifold> hull_batch(const godot::TypedArray<Manifold> &p_manifolds);
@@ -401,7 +415,6 @@ public:
 	uint64_t get_edge_count() const;
 	uint64_t get_triangle_count() const;
 	uint64_t get_property_vertex_count() const;
-	godot::AABB get_aabb() const;
 
 	int32_t get_genus() const;
 	double get_surface_area() const;
