@@ -78,14 +78,18 @@ static _FORCE_INLINE_ std::vector<manifold::vec3> to_vec3_array(const godot::Pac
 	return array;
 }
 static _FORCE_INLINE_ godot::PackedInt32Array from_int32_array(const std::vector<int> &p_array) {
+	static_assert(sizeof(int) == sizeof(int32_t));
+
 	godot::PackedInt32Array array;
 	array.resize(p_array.size());
-	std::copy(p_array.cbegin(), p_array.cend(), array.begin());
+	memcpy(array.ptrw(), p_array.data(), p_array.size() * sizeof(int32_t));
 	return array;
 }
 static _FORCE_INLINE_ std::vector<int> to_int32_array(const godot::PackedInt32Array &p_array) {
+	static_assert(sizeof(int) == sizeof(int32_t));
+
 	std::vector<int> array;
 	array.resize(p_array.size());
-	std::copy(p_array.begin(), p_array.end(), array.begin());
+	memcpy(array.data(), p_array.ptr(), p_array.size() * sizeof(int32_t));
 	return array;
 }
