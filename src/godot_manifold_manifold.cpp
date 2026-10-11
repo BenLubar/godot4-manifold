@@ -387,7 +387,7 @@ Ref<Manifold> Manifold::set_properties(int p_num_prop, const std::function<Packe
 	const auto prop_func = [p_prop_func, p_num_prop, &old_props, num_old_props](double *p_new_props, manifold::vec3 p_coord, const double *p_old_props) -> void {
 		memcpy(old_props.ptrw(), p_old_props, sizeof(double) * num_old_props);
 		const PackedFloat64Array new_props = p_prop_func(from_vec3(p_coord), old_props);
-		memcpy(p_new_props, new_props.ptr(), sizeof(double) * Math::min(int(new_props.size()), p_num_prop));
+		memcpy(p_new_props, new_props.ptr(), sizeof(double) * Math::min(static_cast<int>(new_props.size()), p_num_prop));
 	};
 	return memnew(Manifold(_inner->_manifold.SetProperties(p_num_prop, prop_func)));
 }

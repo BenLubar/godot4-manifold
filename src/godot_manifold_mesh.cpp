@@ -1,6 +1,7 @@
 #include "godot_manifold_converters.h"
 #include "godot_manifold_defs.h"
 
+#include <cstddef>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/templates/hash_map.hpp>
 #include <godot_cpp/templates/local_vector.hpp>
@@ -260,28 +261,28 @@ void ManifoldMesh::remove_unused_materials() {
 
 #define SET_VALUE(m_prop, m_param)  \
 	_ensure_meshgl();               \
-	m_prop = m_param;               \
+	(m_prop) = m_param;             \
 	_inner->_manifold_dirty = true; \
 	_inner->_arrays.clear();        \
 	emit_changed()
-#define SET_ARRAY(m_prop, m_param)                                            \
-	_ensure_meshgl();                                                         \
-	m_prop.resize(m_param.size());                                            \
-	static_assert(sizeof(m_param[0]) == sizeof(m_prop[0]));                   \
-	std::copy(m_param.ptr(), m_param.ptr() + m_param.size(), m_prop.begin()); \
-	_inner->_manifold_dirty = true;                                           \
-	_inner->_arrays.clear();                                                  \
+#define SET_ARRAY(m_prop, m_param)                                                    \
+	_ensure_meshgl();                                                                 \
+	(m_prop).resize((m_param).size());                                                \
+	static_assert(sizeof((m_param)[0]) == sizeof((m_prop)[0]));                       \
+	std::copy((m_param).ptr(), (m_param).ptr() + (m_param).size(), (m_prop).begin()); \
+	_inner->_manifold_dirty = true;                                                   \
+	_inner->_arrays.clear();                                                          \
 	emit_changed()
 
 #define GET_VALUE(m_prop) \
 	_ensure_meshgl();     \
 	return m_prop
-#define GET_ARRAY(m_packed, m_prop)                        \
-	_ensure_meshgl();                                      \
-	m_packed array;                                        \
-	static_assert(sizeof(array[0]) == sizeof(m_prop[0]));  \
-	array.resize(m_prop.size());                           \
-	std::copy(m_prop.begin(), m_prop.end(), array.ptrw()); \
+#define GET_ARRAY(m_packed, m_prop)                            \
+	_ensure_meshgl();                                          \
+	m_packed array;                                            \
+	static_assert(sizeof(array[0]) == sizeof((m_prop)[0]));    \
+	array.resize((m_prop).size());                             \
+	std::copy((m_prop).begin(), (m_prop).end(), array.ptrw()); \
 	return array
 
 void ManifoldMesh::set_num_prop(I p_num_prop) {
@@ -393,10 +394,10 @@ Array ManifoldMesh::_surface_get_arrays(int32_t p_index) const {
 	return _inner->_arrays[p_index];
 }
 TypedArray<Array> ManifoldMesh::_surface_get_blend_shape_arrays(int32_t p_index) const {
-	return TypedArray<Array>();
+	return {};
 }
 Dictionary ManifoldMesh::_surface_get_lods(int32_t p_index) const {
-	return Dictionary();
+	return {};
 }
 uint32_t ManifoldMesh::_surface_get_format(int32_t p_index) const {
 	ERR_FAIL_INDEX_V(p_index, _surface_formats.size(), 0);
@@ -464,7 +465,7 @@ static BitField<Mesh::ArrayFormat> get_surface_format_hack(const Array &p_arrays
 	BitField<Mesh::ArrayFormat> format = 0;
 	for (int64_t i = 0; i < Mesh::ARRAY_MAX; i++) {
 		if (p_arrays[i] != Variant()) {
-			format.set_flag(Mesh::ArrayFormat(1 << i));
+			format.set_flag(static_cast<Mesh::ArrayFormat>(UINT64_C(1) << i));
 		}
 	}
 	return format;
@@ -475,13 +476,13 @@ Ref<ManifoldMesh> ManifoldMesh::from_mesh(const Ref<Mesh> &p_mesh) {
 	const Ref<ArrayMesh> array_mesh = p_mesh;
 	ERR_FAIL_COND_V(array_mesh.is_valid() && array_mesh->get_blend_shape_count() != 0, Ref<ManifoldMesh>());
 
-	Ref<ManifoldMesh> mesh;
-	mesh.instantiate();
+	Ref<ManifoldMesh> mesh{ memnew(ManifoldMesh) };
 
 	const int32_t num_surfaces = p_mesh->get_surface_count();
 
 	uint32_t format_union = 0;
-	I total_vertices = 0, total_indices = 0;
+	I total_vertices = 0;
+	I total_indices = 0;
 	for (int32_t surface = 0; surface < num_surfaces; surface++) {
 		const uint32_t format = array_mesh.is_valid() ? array_mesh->surface_get_format(surface) : get_surface_format_hack(p_mesh->surface_get_arrays(surface));
 
@@ -497,13 +498,13 @@ Ref<ManifoldMesh> ManifoldMesh::from_mesh(const Ref<Mesh> &p_mesh) {
 			const int32_t vertices = array_mesh->surface_get_array_len(surface);
 			const int32_t indices = array_mesh->surface_get_array_index_len(surface);
 			total_vertices += vertices;
-			total_indices += (format & ARRAY_FORMAT_INDEX) ? indices : vertices;
+			total_indices += (format & ARRAY_FORMAT_INDEX) != 0 ? indices : vertices;
 		} else {
 			const Array &arrays = p_mesh->surface_get_arrays(surface);
 			const PackedVector3Array vertices = arrays[ARRAY_VERTEX];
 			const PackedInt32Array indices = arrays[ARRAY_INDEX];
 			total_vertices += vertices.size();
-			total_indices += (format & ARRAY_FORMAT_INDEX) ? indices.size() : vertices.size();
+			total_indices += (format & ARRAY_FORMAT_INDEX) != 0 ? indices.size() : vertices.size();
 		}
 	}
 
@@ -518,38 +519,39 @@ Ref<ManifoldMesh> ManifoldMesh::from_mesh(const Ref<Mesh> &p_mesh) {
 	// never include tangents - they are computed when we turn back into a mesh
 	mesh->_inner->_meshgl.numProp = 6;
 
-	if (format_union & ARRAY_FORMAT_TEX_UV) {
+	if ((format_union & ARRAY_FORMAT_TEX_UV) != 0) {
 		mesh->_inner->_meshgl.numProp = 8;
 	}
-	if (format_union & ARRAY_FORMAT_TEX_UV2) {
+	if ((format_union & ARRAY_FORMAT_TEX_UV2) != 0) {
 		mesh->_inner->_meshgl.numProp = 10;
 	}
-	if (format_union & ARRAY_FORMAT_COLOR) {
+	if ((format_union & ARRAY_FORMAT_COLOR) != 0) {
 		mesh->_inner->_meshgl.numProp = 14;
 	}
-	if (format_union & ARRAY_FORMAT_CUSTOM0) {
+	if ((format_union & ARRAY_FORMAT_CUSTOM0) != 0) {
 		mesh->_inner->_meshgl.numProp = 18;
 	}
-	if (format_union & ARRAY_FORMAT_CUSTOM1) {
+	if ((format_union & ARRAY_FORMAT_CUSTOM1) != 0) {
 		mesh->_inner->_meshgl.numProp = 22;
 	}
-	if (format_union & ARRAY_FORMAT_CUSTOM2) {
+	if ((format_union & ARRAY_FORMAT_CUSTOM2) != 0) {
 		mesh->_inner->_meshgl.numProp = 26;
 	}
-	if (format_union & ARRAY_FORMAT_CUSTOM3) {
+	if ((format_union & ARRAY_FORMAT_CUSTOM3) != 0) {
 		mesh->_inner->_meshgl.numProp = 30;
 	}
 
 	const I stride = mesh->_inner->_meshgl.numProp;
 
-	mesh->_inner->_meshgl.vertProperties.resize(total_vertices * stride);
+	mesh->_inner->_meshgl.vertProperties.resize(static_cast<int64_t>(total_vertices) * stride);
 	mesh->_inner->_meshgl.triVerts.resize(total_indices);
 	mesh->_inner->_meshgl.runIndex.resize(num_surfaces + 1);
 	mesh->_inner->_meshgl.runOriginalID.resize(num_surfaces);
 
 	mesh->_inner->_meshgl.runIndex[0] = 0;
 
-	I base_vertex = 0, base_index = 0;
+	I base_vertex = 0;
+	I base_index = 0;
 	for (int32_t surface = 0; surface < num_surfaces; surface++) {
 		ERR_FAIL_COND_V(array_mesh.is_valid() && array_mesh->surface_get_primitive_type(surface) != PRIMITIVE_TRIANGLES, Ref<ManifoldMesh>());
 
@@ -567,15 +569,16 @@ Ref<ManifoldMesh> ManifoldMesh::from_mesh(const Ref<Mesh> &p_mesh) {
 			mesh->_surface_formats[existing_surface] |= format;
 		}
 
-		I vertex = base_vertex, index = base_index;
+		I vertex = base_vertex;
+		I index = base_index;
 
 		const Array arrays = p_mesh->surface_get_arrays(surface);
 
 		const PackedVector3Array positions = arrays[ARRAY_VERTEX];
-		for (int32_t i = 0; i < positions.size(); i++) {
-			mesh->_inner->_meshgl.vertProperties[vertex * stride + 0] = positions[i].x;
-			mesh->_inner->_meshgl.vertProperties[vertex * stride + 1] = positions[i].y;
-			mesh->_inner->_meshgl.vertProperties[vertex * stride + 2] = positions[i].z;
+		for (const Vector3 &position : positions) {
+			mesh->_inner->_meshgl.vertProperties[(vertex * stride) + 0] = position.x;
+			mesh->_inner->_meshgl.vertProperties[(vertex * stride) + 1] = position.y;
+			mesh->_inner->_meshgl.vertProperties[(vertex * stride) + 2] = position.z;
 			vertex++;
 		}
 
@@ -606,7 +609,7 @@ Ref<ManifoldMesh> ManifoldMesh::from_mesh(const Ref<Mesh> &p_mesh) {
 		}
 		DEV_ASSERT(stride <= 30);
 
-		if (format & ARRAY_FORMAT_INDEX) {
+		if ((format & ARRAY_FORMAT_INDEX) != 0) {
 			const PackedInt32Array indices = arrays[ARRAY_INDEX];
 			for (int32_t i = 0; i < indices.size(); i += 3) {
 				mesh->_inner->_meshgl.triVerts[index++] = base_vertex + indices[i + 0];
@@ -651,8 +654,7 @@ Ref<ArrayMesh> ManifoldMesh::to_mesh(bool p_generate_lods, bool p_create_shadow_
 
 	_commit_to_arrays();
 
-	Ref<ImporterMesh> mesh;
-	mesh.instantiate();
+	Ref<ImporterMesh> mesh{ memnew(ImporterMesh) };
 
 	for (int32_t i = 0; i < _inner->_arrays.size(); i++) {
 		const Ref<Material> material = likely(i < _surface_materials.size()) ? _surface_materials[i] : Variant();
@@ -673,12 +675,10 @@ Ref<ArrayMesh> ManifoldMesh::to_mesh(bool p_generate_lods, bool p_create_shadow_
 	if (p_generate_lods) {
 		mesh->generate_lods(60.0f, 0.0f, Array());
 	}
-#if 0
 	// TODO: https://github.com/godotengine/godot/pull/103948
-	if (p_create_shadow_mesh) {
-		mesh->create_shadow_mesh();
-	}
-#endif
+	//if (p_create_shadow_mesh) {
+	//	mesh->create_shadow_mesh();
+	//}
 
 	return mesh->get_mesh();
 }
@@ -940,22 +940,22 @@ Ref<ManifoldMesh> ManifoldMesh::modify_normal(const Callable &p_modify, bool p_n
 	_ensure_manifold();
 	const int32_t num_prop = _inner->_manifold.NumProp();
 	DEV_ASSERT(num_prop <= 0 || num_prop >= 3);
-	return _new_manifold(_inner->_manifold.SetProperties(Math::max(num_prop, 3), [p_modify, p_normalize, num_prop](double *p_new_prop, manifold::vec3 p_position, const double *p_old_prop) -> void {
-											  Vector3 normal;
-											  if (num_prop >= 3) {
-												  normal.x = static_cast<real_t>(p_old_prop[0]);
-												  normal.y = static_cast<real_t>(p_old_prop[1]);
-												  normal.z = static_cast<real_t>(p_old_prop[2]);
-											  }
-											  normal = p_modify.call(from_vec3(p_position), normal);
-											  if (p_normalize) {
-												  normal.normalize();
-											  }
-											  p_new_prop[0] = normal.x;
-											  p_new_prop[1] = normal.y;
-											  p_new_prop[2] = normal.z;
-										  })
-					.SmoothByNormals(0));
+	const auto prop_func = [p_modify, p_normalize, num_prop](double *p_new_prop, manifold::vec3 p_position, const double *p_old_prop) -> void {
+		Vector3 normal;
+		if (num_prop >= 3) {
+			normal.x = static_cast<real_t>(p_old_prop[0]);
+			normal.y = static_cast<real_t>(p_old_prop[1]);
+			normal.z = static_cast<real_t>(p_old_prop[2]);
+		}
+		normal = p_modify.call(from_vec3(p_position), normal);
+		if (p_normalize) {
+			normal.normalize();
+		}
+		p_new_prop[0] = normal.x;
+		p_new_prop[1] = normal.y;
+		p_new_prop[2] = normal.z;
+	};
+	return _new_manifold(_inner->_manifold.SetProperties(Math::max(num_prop, 3), prop_func).SmoothByNormals(0));
 }
 Ref<ManifoldMesh> ManifoldMesh::modify_tex_uv(const Callable &p_modify) const {
 	WARN_IF_UNUSED_FORMAT(TEX_UV);
@@ -1074,7 +1074,7 @@ void ManifoldMesh::_reallocate_original_ids() {
 	emit_changed();
 }
 
-static Variant _encode_custom_array(Mesh::ArrayCustomFormat format, const PackedColorArray &colors) {
+static Variant encode_custom_array(Mesh::ArrayCustomFormat format, const PackedColorArray &colors) {
 	PackedByteArray bytes;
 	PackedFloat32Array floats;
 
@@ -1082,19 +1082,19 @@ static Variant _encode_custom_array(Mesh::ArrayCustomFormat format, const Packed
 		case Mesh::ARRAY_CUSTOM_RGBA8_UNORM:
 			bytes.resize(colors.size() * 4);
 			for (int64_t i = 0, j = 0; i < colors.size(); i++, j += 4) {
-				bytes[j + 0] = uint8_t(Math::clamp(colors[i].r * 255.0f, 0.0f, 255.0f));
-				bytes[j + 1] = uint8_t(Math::clamp(colors[i].g * 255.0f, 0.0f, 255.0f));
-				bytes[j + 2] = uint8_t(Math::clamp(colors[i].b * 255.0f, 0.0f, 255.0f));
-				bytes[j + 3] = uint8_t(Math::clamp(colors[i].a * 255.0f, 0.0f, 255.0f));
+				bytes[j + 0] = static_cast<uint8_t>(Math::clamp(colors[i].r * 255.0f, 0.0f, 255.0f));
+				bytes[j + 1] = static_cast<uint8_t>(Math::clamp(colors[i].g * 255.0f, 0.0f, 255.0f));
+				bytes[j + 2] = static_cast<uint8_t>(Math::clamp(colors[i].b * 255.0f, 0.0f, 255.0f));
+				bytes[j + 3] = static_cast<uint8_t>(Math::clamp(colors[i].a * 255.0f, 0.0f, 255.0f));
 			}
 			return bytes;
 		case Mesh::ARRAY_CUSTOM_RGBA8_SNORM:
 			bytes.resize(colors.size() * 4);
 			for (int64_t i = 0, j = 0; i < colors.size(); i++, j += 4) {
-				bytes[j + 0] = uint8_t(int8_t(Math::clamp(colors[i].r * 127.0f, -127.0f, 127.0f)));
-				bytes[j + 1] = uint8_t(int8_t(Math::clamp(colors[i].g * 127.0f, -127.0f, 127.0f)));
-				bytes[j + 2] = uint8_t(int8_t(Math::clamp(colors[i].b * 127.0f, -127.0f, 127.0f)));
-				bytes[j + 3] = uint8_t(int8_t(Math::clamp(colors[i].a * 127.0f, -127.0f, 127.0f)));
+				bytes[j + 0] = static_cast<uint8_t>(static_cast<int8_t>(Math::clamp(colors[i].r * 127.0f, -127.0f, 127.0f)));
+				bytes[j + 1] = static_cast<uint8_t>(static_cast<int8_t>(Math::clamp(colors[i].g * 127.0f, -127.0f, 127.0f)));
+				bytes[j + 2] = static_cast<uint8_t>(static_cast<int8_t>(Math::clamp(colors[i].b * 127.0f, -127.0f, 127.0f)));
+				bytes[j + 3] = static_cast<uint8_t>(static_cast<int8_t>(Math::clamp(colors[i].a * 127.0f, -127.0f, 127.0f)));
 			}
 			return bytes;
 		case Mesh::ARRAY_CUSTOM_RG_HALF:
@@ -1164,9 +1164,15 @@ void ManifoldMesh::_commit_to_arrays() const {
 		array.resize(Mesh::ARRAY_MAX);
 
 		if (likely(i < _surface_original_ids.size())) {
-			PackedVector3Array positions, normals;
-			PackedVector2Array tex_uv, tex_uv2;
-			PackedColorArray colors, custom0, custom1, custom2, custom3;
+			PackedVector3Array positions;
+			PackedVector3Array normals;
+			PackedVector2Array tex_uv;
+			PackedVector2Array tex_uv2;
+			PackedColorArray colors;
+			PackedColorArray custom0;
+			PackedColorArray custom1;
+			PackedColorArray custom2;
+			PackedColorArray custom3;
 
 			_unpack_to_arrays(_surface_original_ids[i], positions, normals, tex_uv, tex_uv2, colors, custom0, custom1, custom2, custom3);
 
@@ -1187,21 +1193,20 @@ void ManifoldMesh::_commit_to_arrays() const {
 				array[ARRAY_COLOR] = colors;
 			}
 			if (format.has_flag(Mesh::ARRAY_FORMAT_CUSTOM0)) {
-				array[ARRAY_CUSTOM0] = _encode_custom_array(static_cast<ArrayCustomFormat>((format >> ARRAY_FORMAT_CUSTOM0_SHIFT) & ARRAY_FORMAT_CUSTOM_MASK), custom0);
+				array[ARRAY_CUSTOM0] = encode_custom_array(static_cast<ArrayCustomFormat>((format >> ARRAY_FORMAT_CUSTOM0_SHIFT) & ARRAY_FORMAT_CUSTOM_MASK), custom0);
 			}
 			if (format.has_flag(ARRAY_FORMAT_CUSTOM1)) {
-				array[ARRAY_CUSTOM1] = _encode_custom_array(static_cast<ArrayCustomFormat>((format >> ARRAY_FORMAT_CUSTOM1_SHIFT) & ARRAY_FORMAT_CUSTOM_MASK), custom1);
+				array[ARRAY_CUSTOM1] = encode_custom_array(static_cast<ArrayCustomFormat>((format >> ARRAY_FORMAT_CUSTOM1_SHIFT) & ARRAY_FORMAT_CUSTOM_MASK), custom1);
 			}
 			if (format.has_flag(ARRAY_FORMAT_CUSTOM2)) {
-				array[ARRAY_CUSTOM2] = _encode_custom_array(static_cast<ArrayCustomFormat>((format >> ARRAY_FORMAT_CUSTOM2_SHIFT) & ARRAY_FORMAT_CUSTOM_MASK), custom2);
+				array[ARRAY_CUSTOM2] = encode_custom_array(static_cast<ArrayCustomFormat>((format >> ARRAY_FORMAT_CUSTOM2_SHIFT) & ARRAY_FORMAT_CUSTOM_MASK), custom2);
 			}
 			if (format.has_flag(ARRAY_FORMAT_CUSTOM3)) {
-				array[ARRAY_CUSTOM3] = _encode_custom_array(static_cast<ArrayCustomFormat>((format >> ARRAY_FORMAT_CUSTOM3_SHIFT) & ARRAY_FORMAT_CUSTOM_MASK), custom3);
+				array[ARRAY_CUSTOM3] = encode_custom_array(static_cast<ArrayCustomFormat>((format >> ARRAY_FORMAT_CUSTOM3_SHIFT) & ARRAY_FORMAT_CUSTOM_MASK), custom3);
 			}
 
 			if (format.has_flag(ARRAY_FORMAT_TANGENT)) {
-				Ref<SurfaceTool> st;
-				st.instantiate();
+				Ref<SurfaceTool> st{ memnew(SurfaceTool) };
 
 				st->create_from_arrays(array);
 				st->generate_tangents();
@@ -1285,8 +1290,7 @@ void ManifoldMesh::_init_normals(const Array &arrays, I vertex, I stride) {
 		normals = arrays[ARRAY_NORMAL];
 	} else {
 		// we aren't going to export normals for this material, but we should still give manifold realistic normals.
-		Ref<SurfaceTool> st;
-		st.instantiate();
+		Ref<SurfaceTool> st{ memnew(SurfaceTool) };
 
 		st->create_from_arrays(arrays);
 		st->generate_normals();
@@ -1295,66 +1299,66 @@ void ManifoldMesh::_init_normals(const Array &arrays, I vertex, I stride) {
 		normals = st_arrays[ARRAY_NORMAL];
 	}
 
-	for (I i = 0; i < normals.size(); i++) {
-		_inner->_meshgl.vertProperties[vertex * stride + 3] = normals[i].x;
-		_inner->_meshgl.vertProperties[vertex * stride + 4] = normals[i].y;
-		_inner->_meshgl.vertProperties[vertex * stride + 5] = normals[i].z;
+	for (const Vector3 &normal : normals) {
+		_inner->_meshgl.vertProperties[(vertex * stride) + 3] = normal.x;
+		_inner->_meshgl.vertProperties[(vertex * stride) + 4] = normal.y;
+		_inner->_meshgl.vertProperties[(vertex * stride) + 5] = normal.z;
 		vertex++;
 	}
 }
 void ManifoldMesh::_init_tex_uv(const Array &arrays, I vertex, I stride) {
-	PackedVector2Array uv;
+	PackedVector2Array tex_uv;
 	if (likely(arrays[ARRAY_TEX_UV] != Variant())) {
-		uv = arrays[ARRAY_TEX_UV];
+		tex_uv = arrays[ARRAY_TEX_UV];
 	} else {
-		uv.resize(arrays[ARRAY_VERTEX].operator PackedVector3Array().size());
+		tex_uv.resize(arrays[ARRAY_VERTEX].operator PackedVector3Array().size());
 	}
 
-	for (I i = 0; i < uv.size(); i++) {
-		_inner->_meshgl.vertProperties[vertex * stride + 6] = uv[i].x;
-		_inner->_meshgl.vertProperties[vertex * stride + 7] = uv[i].y;
+	for (const Vector2 &uv : tex_uv) {
+		_inner->_meshgl.vertProperties[(vertex * stride) + 6] = uv.x;
+		_inner->_meshgl.vertProperties[(vertex * stride) + 7] = uv.y;
 		vertex++;
 	}
 }
 void ManifoldMesh::_init_tex_uv2(const Array &arrays, I vertex, I stride) {
-	PackedVector2Array uv;
+	PackedVector2Array tex_uv2;
 	if (likely(arrays[ARRAY_TEX_UV2] != Variant())) {
-		uv = arrays[ARRAY_TEX_UV2];
+		tex_uv2 = arrays[ARRAY_TEX_UV2];
 	} else {
-		uv.resize(arrays[ARRAY_VERTEX].operator PackedVector3Array().size());
+		tex_uv2.resize(arrays[ARRAY_VERTEX].operator PackedVector3Array().size());
 	}
 
-	for (I i = 0; i < uv.size(); i++) {
-		_inner->_meshgl.vertProperties[vertex * stride + 8] = uv[i].x;
-		_inner->_meshgl.vertProperties[vertex * stride + 9] = uv[i].y;
+	for (const Vector2 &uv : tex_uv2) {
+		_inner->_meshgl.vertProperties[(vertex * stride) + 8] = uv.x;
+		_inner->_meshgl.vertProperties[(vertex * stride) + 9] = uv.y;
 		vertex++;
 	}
 }
 void ManifoldMesh::_init_color(const Array &arrays, I vertex, I stride) {
-	PackedColorArray color;
+	PackedColorArray colors;
 	if (likely(arrays[ARRAY_COLOR] != Variant())) {
-		color = arrays[ARRAY_COLOR];
+		colors = arrays[ARRAY_COLOR];
 	} else {
-		color.resize(arrays[ARRAY_VERTEX].operator PackedVector3Array().size());
+		colors.resize(arrays[ARRAY_VERTEX].operator PackedVector3Array().size());
 		// for consistency, set alpha to 0 like it would be if manifold extended the properties array
-		color.fill(Color(0, 0, 0, 0));
+		colors.fill(Color(0, 0, 0, 0));
 	}
 
-	for (I i = 0; i < color.size(); i++) {
-		_inner->_meshgl.vertProperties[vertex * stride + 10] = color[i].r;
-		_inner->_meshgl.vertProperties[vertex * stride + 11] = color[i].g;
-		_inner->_meshgl.vertProperties[vertex * stride + 12] = color[i].b;
-		_inner->_meshgl.vertProperties[vertex * stride + 13] = color[i].a;
+	for (const Color &color : colors) {
+		_inner->_meshgl.vertProperties[(vertex * stride) + 10] = color.r;
+		_inner->_meshgl.vertProperties[(vertex * stride) + 11] = color.g;
+		_inner->_meshgl.vertProperties[(vertex * stride) + 12] = color.b;
+		_inner->_meshgl.vertProperties[(vertex * stride) + 13] = color.a;
 		vertex++;
 	}
 }
 void ManifoldMesh::_init_custom(const Array &arrays, I vertex, I stride, I offset, ArrayType type, ArrayCustomFormat custom_format) {
 	if (unlikely(arrays[type] == Variant())) {
 		for (I i = 0; i < arrays[ARRAY_VERTEX].operator PackedVector3Array().size(); i++) {
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = 0;
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = 0;
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = 0;
-			_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = 0;
+			_inner->_meshgl.vertProperties[(vertex * stride) + offset + 0] = 0;
+			_inner->_meshgl.vertProperties[(vertex * stride) + offset + 1] = 0;
+			_inner->_meshgl.vertProperties[(vertex * stride) + offset + 2] = 0;
+			_inner->_meshgl.vertProperties[(vertex * stride) + offset + 3] = 0;
 			vertex++;
 		}
 
@@ -1370,10 +1374,10 @@ void ManifoldMesh::_init_custom(const Array &arrays, I vertex, I stride, I offse
 			DEV_ASSERT(bytes.size() % 4 == 0);
 
 			for (I i = 0; i < bytes.size(); i += 4) {
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = bytes[i + 0] / 255.0f;
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = bytes[i + 1] / 255.0f;
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = bytes[i + 2] / 255.0f;
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = bytes[i + 3] / 255.0f;
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 0] = bytes[i + 0] / 255.0f;
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 1] = bytes[i + 1] / 255.0f;
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 2] = bytes[i + 2] / 255.0f;
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 3] = bytes[i + 3] / 255.0f;
 				vertex++;
 			}
 
@@ -1383,10 +1387,10 @@ void ManifoldMesh::_init_custom(const Array &arrays, I vertex, I stride, I offse
 			DEV_ASSERT(bytes.size() % 4 == 0);
 
 			for (I i = 0; i < bytes.size(); i += 4) {
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = Math::max(int8_t(bytes[i + 0]) / 127.0f, -1.0f);
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = Math::max(int8_t(bytes[i + 1]) / 127.0f, -1.0f);
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = Math::max(int8_t(bytes[i + 2]) / 127.0f, -1.0f);
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = Math::max(int8_t(bytes[i + 3]) / 127.0f, -1.0f);
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 0] = Math::max(static_cast<int8_t>(bytes[i + 0]) / 127.0f, -1.0f);
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 1] = Math::max(static_cast<int8_t>(bytes[i + 1]) / 127.0f, -1.0f);
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 2] = Math::max(static_cast<int8_t>(bytes[i + 2]) / 127.0f, -1.0f);
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 3] = Math::max(static_cast<int8_t>(bytes[i + 3]) / 127.0f, -1.0f);
 				vertex++;
 			}
 
@@ -1396,10 +1400,10 @@ void ManifoldMesh::_init_custom(const Array &arrays, I vertex, I stride, I offse
 			DEV_ASSERT(bytes.size() % 4 == 0);
 
 			for (I i = 0; i < bytes.size(); i += 4) {
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = bytes.decode_half(i + 0);
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = bytes.decode_half(i + 2);
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = 0;
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = 0;
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 0] = bytes.decode_half(i + 0);
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 1] = bytes.decode_half(i + 2);
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 2] = 0;
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 3] = 0;
 				vertex++;
 			}
 
@@ -1409,10 +1413,10 @@ void ManifoldMesh::_init_custom(const Array &arrays, I vertex, I stride, I offse
 			DEV_ASSERT(bytes.size() % 8 == 0);
 
 			for (I i = 0; i < bytes.size(); i += 4) {
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = bytes.decode_half(i + 0);
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = bytes.decode_half(i + 2);
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = bytes.decode_half(i + 4);
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = bytes.decode_half(i + 6);
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 0] = bytes.decode_half(i + 0);
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 1] = bytes.decode_half(i + 2);
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 2] = bytes.decode_half(i + 4);
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 3] = bytes.decode_half(i + 6);
 				vertex++;
 			}
 
@@ -1422,10 +1426,10 @@ void ManifoldMesh::_init_custom(const Array &arrays, I vertex, I stride, I offse
 			DEV_ASSERT(floats.size() % 1 == 0);
 
 			for (I i = 0; i < floats.size(); i++) {
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = floats[i + 0];
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = 0;
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = 0;
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = 0;
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 0] = floats[i + 0];
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 1] = 0;
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 2] = 0;
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 3] = 0;
 				vertex++;
 			}
 
@@ -1435,10 +1439,10 @@ void ManifoldMesh::_init_custom(const Array &arrays, I vertex, I stride, I offse
 			DEV_ASSERT(floats.size() % 2 == 0);
 
 			for (I i = 0; i < floats.size(); i += 2) {
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = floats[i + 0];
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = floats[i + 1];
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = 0;
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = 0;
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 0] = floats[i + 0];
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 1] = floats[i + 1];
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 2] = 0;
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 3] = 0;
 				vertex++;
 			}
 
@@ -1448,10 +1452,10 @@ void ManifoldMesh::_init_custom(const Array &arrays, I vertex, I stride, I offse
 			DEV_ASSERT(floats.size() % 3 == 0);
 
 			for (I i = 0; i < floats.size(); i += 3) {
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = floats[i + 0];
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = floats[i + 1];
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = floats[i + 2];
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = 0;
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 0] = floats[i + 0];
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 1] = floats[i + 1];
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 2] = floats[i + 2];
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 3] = 0;
 				vertex++;
 			}
 
@@ -1461,10 +1465,10 @@ void ManifoldMesh::_init_custom(const Array &arrays, I vertex, I stride, I offse
 			DEV_ASSERT(floats.size() % 4 == 0);
 
 			for (I i = 0; i < floats.size(); i += 4) {
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 0] = floats[i + 0];
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 1] = floats[i + 1];
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 2] = floats[i + 2];
-				_inner->_meshgl.vertProperties[vertex * stride + offset + 3] = floats[i + 3];
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 0] = floats[i + 0];
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 1] = floats[i + 1];
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 2] = floats[i + 2];
+				_inner->_meshgl.vertProperties[(vertex * stride) + offset + 3] = floats[i + 3];
 				vertex++;
 			}
 
@@ -1475,8 +1479,7 @@ void ManifoldMesh::_init_custom(const Array &arrays, I vertex, I stride, I offse
 }
 
 Ref<ManifoldMesh> ManifoldMesh::_primitive(const manifold::Manifold &new_manifold, const Ref<Material> &material, const String &name) {
-	Ref<ManifoldMesh> m;
-	m.instantiate();
+	Ref<ManifoldMesh> m{ memnew(ManifoldMesh) };
 
 	m->_surface_formats.append(ARRAY_FORMAT_VERTEX | ARRAY_FORMAT_NORMAL);
 	m->_surface_original_ids.append(new_manifold.OriginalID());
@@ -1495,8 +1498,7 @@ Ref<ManifoldMesh> ManifoldMesh::_primitive(const manifold::Manifold &new_manifol
 }
 
 Ref<ManifoldMesh> ManifoldMesh::_new_merged_manifold(const manifold::Manifold &new_manifold, const Vector<Ref<ManifoldMesh>> &originals) {
-	Ref<ManifoldMesh> m;
-	m.instantiate();
+	Ref<ManifoldMesh> m{ memnew(ManifoldMesh) };
 
 	m->_inner->_manifold = new_manifold;
 	m->_inner->_meshgl_dirty = true;
@@ -1522,8 +1524,7 @@ Ref<ManifoldMesh> ManifoldMesh::_new_merged_manifold(const manifold::Manifold &n
 }
 
 Ref<ManifoldMesh> ManifoldMesh::_new_manifold(const manifold::Manifold &new_manifold) const {
-	Ref<ManifoldMesh> m;
-	m.instantiate();
+	Ref<ManifoldMesh> m{ memnew(ManifoldMesh) };
 
 	m->_surface_formats = const_cast<PackedInt32Array *>(&_surface_formats)->duplicate();
 	m->_surface_original_ids = const_cast<PackedInt32Array *>(&_surface_original_ids)->duplicate();
@@ -1565,7 +1566,7 @@ Ref<ManifoldMesh> ManifoldMesh::_halfspace(const Plane &p_plane, const Ref<Mater
 	manifold::Box bBox = _inner->_manifold.BoundingBox();
 	manifold::vec3 normal = manifold::la::normalize(to_vec3(p_plane.normal));
 	manifold::Manifold cutter = manifold::Manifold::Cube(manifold::vec3(2.0), true).Translate({ 1.0, 0.0, 0.0 });
-	double size = manifold::la::length(bBox.Center() - normal * double(p_plane.d)) + 0.5 * manifold::la::length(bBox.Size());
+	double size = manifold::la::length(bBox.Center() - normal * static_cast<double>(p_plane.d)) + (0.5 * manifold::la::length(bBox.Size()));
 	cutter = cutter.Scale(manifold::vec3(size)).Translate({ p_plane.d, 0.0, 0.0 });
 	double yDeg = manifold::degrees(-std::asin(normal.z));
 	double zDeg = manifold::degrees(std::atan2(normal.y, normal.x));

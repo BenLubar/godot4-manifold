@@ -1,4 +1,3 @@
-#include "godot_manifold_converters.h"
 #include "godot_manifold_defs.h"
 
 #include <godot_cpp/core/class_db.hpp>
@@ -179,7 +178,7 @@ void ManifoldMesh64::set_num_prop(uint64_t p_num_prop) {
 		return a;                                                                                                    \
 	}                                                                                                                \
 	void m_class::set_##m_name(const m_array &p_##m_name) {                                                          \
-		if (unlikely(p_##m_name.size() % m_size_multiple != 0)) {                                                    \
+		if (unlikely(p_##m_name.size() % (m_size_multiple) != 0)) {                                                    \
 			WARN_PRINT(#m_name " must be a multiple of " #m_size_multiple " entries in length");                     \
 		}                                                                                                            \
 		_inner->_meshgl.m_struct_name.resize(p_##m_name.size());                                                     \

@@ -13,13 +13,13 @@
 using namespace godot;
 
 void CrossSection::_bind_methods() {
-	static_assert(SQUARE == int(manifold::CrossSection::JoinType::Square));
+	static_assert(SQUARE == static_cast<int>(manifold::CrossSection::JoinType::Square));
 	BIND_ENUM_CONSTANT(SQUARE);
-	static_assert(ROUND == int(manifold::CrossSection::JoinType::Round));
+	static_assert(ROUND == static_cast<int>(manifold::CrossSection::JoinType::Round));
 	BIND_ENUM_CONSTANT(ROUND);
-	static_assert(MITER == int(manifold::CrossSection::JoinType::Miter));
+	static_assert(MITER == static_cast<int>(manifold::CrossSection::JoinType::Miter));
 	BIND_ENUM_CONSTANT(MITER);
-	static_assert(BEVEL == int(manifold::CrossSection::JoinType::Bevel));
+	static_assert(BEVEL == static_cast<int>(manifold::CrossSection::JoinType::Bevel));
 	BIND_ENUM_CONSTANT(BEVEL);
 
 	ClassDB::bind_static_method(get_class_static(), D_METHOD("from_simple_polygon", "simple_polygon"), &CrossSection::from_simple_polygon);
@@ -111,7 +111,8 @@ TypedArray<PackedVector2Array> CrossSection::to_convex_polygons() const {
 	const TypedArray<PackedVector2Array> polygons_and_holes = to_polygons();
 
 	TypedArray<PackedVector2Array> decomp;
-	TPPLPolyList in_poly, out_poly;
+	TPPLPolyList in_poly;
+	TPPLPolyList out_poly;
 
 	for (int64_t i = 0; i < polygons_and_holes.size(); i++) {
 		const PackedVector2Array polygon_or_hole = polygons_and_holes[i];
@@ -143,7 +144,7 @@ TypedArray<PackedVector2Array> CrossSection::to_convex_polygons() const {
 		const PackedVector2Array tris = to_triangles();
 		decomp.resize(tris.size() / 3);
 		for (int64_t i = 0; i < decomp.size(); i++) {
-			decomp[i] = tris.slice(i * 3, i * 3 + 3);
+			decomp[i] = tris.slice(i * 3, (i * 3) + 3);
 		}
 
 		return decomp;
